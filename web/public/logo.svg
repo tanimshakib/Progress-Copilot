@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <!-- Background Radial Gradient -->
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#180b30"/>
+      <stop offset="70%" stop-color="#0b0416"/>
+      <stop offset="100%" stop-color="#05020a"/>
+    </radialGradient>
+
+    <!-- Outer Glow Ring -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+
+    <!-- Bar Chart & Arrow Gradient -->
+    <linearGradient id="greenGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#15803d"/>
+      <stop offset="60%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#4ade80"/>
+    </linearGradient>
+
+    <!-- Purple Timer Gradient -->
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="50%" stop-color="#9333ea"/>
+      <stop offset="100%" stop-color="#6b21a8"/>
+    </linearGradient>
+
+    <!-- Cyan Text Gradient -->
+    <linearGradient id="cyanTextGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Soft Drop Shadow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Circular Outer Container -->
+  <circle cx="250" cy="250" r="235" fill="url(#bgGrad)" stroke="url(#ringGrad)" stroke-width="10" />
+
+  <!-- Inner Decorative Ring -->
+  <circle cx="250" cy="250" r="222" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2" />
+
+  <!-- GRAPHICS GROUP -->
+  <g transform="translate(110, 80)">
+    
+    <!-- Stopwatch / Timer (Right side) -->
+    <g transform="translate(130, 20)">
+      <!-- Top Button / Crown -->
+      <rect x="58" y="10" width="16" height="14" rx="3" fill="url(#purpleGrad)" />
+      <rect x="54" y="22" width="24" height="6" rx="2" fill="#c084fc" />
+      <rect x="18" y="24" width="12" height="6" rx="2" fill="url(#purpleGrad)" transform="rotate(-35 24 27)" />
+      <rect x="102" y="24" width="12" height="6" rx="2" fill="url(#purpleGrad)" transform="rotate(35 108 27)" />
+
+      <!-- Stopwatch Circle Body -->
+      <circle cx="66" cy="85" r="58" fill="none" stroke="url(#purpleGrad)" stroke-width="12" filter="url(#glow)" />
+
+      <!-- Ticks on Stopwatch Rim -->
+      <line x1="66" y1="35" x2="66" y2="42" stroke="#c084fc" stroke-width="3" stroke-linecap="round" />
+      <line x1="66" y1="128" x2="66" y2="135" stroke="#c084fc" stroke-width="3" stroke-linecap="round" />
+      <line x1="16" y1="85" x2="23" y2="85" stroke="#c084fc" stroke-width="3" stroke-linecap="round" />
+      <line x1="109" y1="85" x2="116" y2="85" stroke="#c084fc" stroke-width="3" stroke-linecap="round" />
+      <line x1="31" y1="50" x2="36" y2="55" stroke="#9333ea" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="101" y1="50" x2="96" y2="55" stroke="#9333ea" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="31" y1="120" x2="36" y2="115" stroke="#9333ea" stroke-width="2.5" stroke-linecap="round" />
+      <line x1="101" y1="120" x2="96" y2="115" stroke="#9333ea" stroke-width="2.5" stroke-linecap="round" />
+
+      <!-- Stopwatch Hand -->
+      <line x1="66" y1="85" x2="88" y2="60" stroke="#22c55e" stroke-width="4" stroke-linecap="round" />
+      <circle cx="66" cy="85" r="5" fill="#22c55e" />
+    </g>
+
+    <!-- Green Bar Chart (Left Side) -->
+    <!-- Bar 1 (Short) -->
+    <rect x="25" y="115" width="22" height="45" rx="3" fill="url(#greenGrad)" />
+    <!-- Bar 2 (Medium) -->
+    <rect x="57" y="80" width="22" height="80" rx="3" fill="url(#greenGrad)" />
+    <!-- Bar 3 (Tall) -->
+    <rect x="89" y="45" width="22" height="115" rx="3" fill="url(#greenGrad)" />
+
+    <!-- Upward Trend Arrow (Sweeping Across Bars) -->
+    <path d="M 12 145 L 60 92 L 95 122 L 175 42" fill="none" stroke="url(#greenGrad)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+    <path d="M 142 40 L 180 38 L 178 76 Z" fill="#4ade80" />
+
+  </g>
+
+  <!-- BRAND TYPOGRAPHY -->
+  <!-- "PROGRESS" -->
+  <text x="250" y="340" text-anchor="middle" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-style="italic" font-size="44" letter-spacing="2" fill="url(#cyanTextGrad)">PROGRESS</text>
+
+  <!-- "COPILOT" -->
+  <text x="250" y="392" text-anchor="middle" font-family="'Arial Black', 'Impact', sans-serif" font-weight="900" font-size="34" letter-spacing="4" fill="#22c55e">COPILOT</text>
+</svg>

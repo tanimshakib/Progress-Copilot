@@ -57,9 +57,9 @@ export function SiteHeader({
     <header className="sticky top-0 z-50 w-full px-4 py-4 md:px-8 bg-transparent border-0">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-            <span className="text-white font-black text-xl italic tracking-tighter">P</span>
-            <div className="absolute inset-0 bg-purple-500 blur-md opacity-40 rounded-xl -z-10" />
+          <div className="relative w-10 h-10 rounded-full overflow-hidden shadow-lg group-hover:scale-105 transition-transform shrink-0 border border-purple-500/30">
+            <img src="/logo.svg" alt="Progress Copilot Logo" className="w-full h-full object-cover rounded-full" />
+            <div className="absolute inset-0 bg-purple-500 blur-md opacity-25 rounded-full -z-10" />
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-lg leading-none tracking-tight text-white flex items-center gap-1">

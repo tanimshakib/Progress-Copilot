@@ -81,7 +81,7 @@ export function TasksPage() {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value as 'ALL' | Priority)}
-            className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="h-10 px-3 rounded-lg bg-slate-100/90 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
           >
             <option value="ALL">All priorities</option>
             <option value="HIGH">HIGH</option>
@@ -504,7 +504,7 @@ function AddTaskForm({
 /* ─────────────────────────── shared bits ─────────────────────────── */
 
 const inputCls =
-  'h-10 w-full px-3 rounded-lg bg-white/5 border border-white/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50';
+  'h-10 w-full px-3 rounded-lg bg-slate-100/90 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50';
 
 function Field({
   label,

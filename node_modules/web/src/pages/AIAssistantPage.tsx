@@ -293,7 +293,7 @@ function ChatTopBar({
         <div className="text-xs uppercase tracking-wider text-gray-500">
           Edith
         </div>
-        <h2 className="text-white font-semibold truncate">
+        <h2 className="text-slate-900 dark:text-white font-semibold truncate">
           {isEmpty ? 'Start a new conversation' : title}
         </h2>
       </div>
@@ -364,14 +364,14 @@ function MessageList({
 function TypingBubble() {
   return (
     <li className="flex justify-start">
-      <div className="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-3 bg-white/[0.06] ring-1 ring-white/10 shadow-md">
-        <div className="text-[11px] font-semibold text-purple-300 mb-1">
+      <div className="max-w-[80%] rounded-2xl rounded-bl-md px-4 py-3 bg-white/90 dark:bg-white/[0.06] ring-1 ring-purple-200/80 dark:ring-white/10 shadow-md">
+        <div className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 mb-1">
           Edith
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-purple-300 animate-bounce [animation-delay:-0.3s]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-purple-300 animate-bounce [animation-delay:-0.15s]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-purple-300 animate-bounce" />
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 dark:bg-purple-300 animate-bounce [animation-delay:-0.3s]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 dark:bg-purple-300 animate-bounce [animation-delay:-0.15s]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 dark:bg-purple-300 animate-bounce" />
         </div>
       </div>
     </li>
@@ -392,12 +392,12 @@ function Message({ message }: { message: ChatMessage }) {
           className={[
             'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-md',
             isUser
-              ? 'bg-gradient-to-br from-purple-600 to-fuchsia-600 text-white rounded-br-md'
-              : 'bg-white/[0.06] text-gray-100 ring-1 ring-white/10 rounded-bl-md',
+              ? 'bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-br-md'
+              : 'bg-white/90 dark:bg-white/[0.06] text-slate-900 dark:text-gray-100 ring-1 ring-purple-200/80 dark:ring-white/10 rounded-bl-md',
           ].join(' ')}
         >
           {!isUser && (
-            <div className="text-[11px] font-semibold text-purple-300 mb-1">
+            <div className="text-[11px] font-semibold text-purple-700 dark:text-purple-300 mb-1">
               Edith
             </div>
           )}
@@ -416,21 +416,21 @@ function EmptyState() {
     'What patterns do you see in my streak?',
   ];
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto">
+    <div className="h-full flex flex-col items-center justify-center text-center max-w-2xl mx-auto py-8">
       <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-purple-900/40">
         E
       </div>
-      <h3 className="mt-4 text-xl font-semibold text-white">
+      <h3 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
         Hi, I'm Edith.
       </h3>
-      <p className="mt-1 text-sm text-gray-400">
+      <p className="mt-1 text-sm text-slate-600 dark:text-gray-400">
         Ask me anything about your progress, goals, or next steps.
       </p>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
         {suggestions.map((s) => (
           <div
             key={s}
-            className="text-left rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-xs text-gray-300"
+            className="text-left rounded-xl border border-purple-200/80 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-3 py-2.5 text-xs text-slate-800 dark:text-gray-300 shadow-sm"
           >
             {s}
           </div>
@@ -477,7 +477,7 @@ function Composer({
           {error}
         </div>
       )}
-      <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.05] focus-within:ring-2 focus-within:ring-purple-500/40 transition">
+      <div className="flex items-end gap-2 rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.05] focus-within:ring-2 focus-within:ring-purple-500/40 transition">
         <textarea
           ref={textareaRef}
           value={value}
@@ -490,7 +490,7 @@ function Composer({
           }}
           placeholder="Message Edith…"
           rows={1}
-          className="flex-1 min-w-0 resize-none bg-transparent text-sm text-white placeholder:text-gray-500 px-4 py-3 outline-none"
+          className="flex-1 min-w-0 resize-none bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 px-4 py-3 outline-none"
         />
         <button
           type="submit"

@@ -34,6 +34,8 @@ const GEMINI_FALLBACK_MODELS = [
   'gemini-flash-latest',
   'gemini-2.5-flash',
   'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
 ];
 const TITLE_MAX_LEN = 48;
 
@@ -212,9 +214,31 @@ async function callGeminiForModel(
   return replyText;
 }
 
+function getAvailableApiKeys(): string[] {
+  const rawKeys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+    process.env.GEMINI_API_KEY_1,
+    process.env.GOOGLE_API_KEY,
+  ];
+
+  const keys: string[] = [];
+  for (const raw of rawKeys) {
+    if (!raw) continue;
+    const parts = raw.split(',').map((k) => k.trim()).filter(Boolean);
+    for (const part of parts) {
+      if (!keys.includes(part)) {
+        keys.push(part);
+      }
+    }
+  }
+  return keys;
+}
+
 async function callGemini(messages: ChatMessage[]): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKeys = getAvailableApiKeys();
+  if (apiKeys.length === 0) {
     const lastUser = [...messages].reverse().find((m) => m.role === 'user')?.content || '';
     return `[Edith AI Offline Mode]: I received your message: "${lastUser.slice(0, 60)}". Configure GEMINI_API_KEY to activate full AI assistance.`;
   }
@@ -223,16 +247,27 @@ async function callGemini(messages: ChatMessage[]): Promise<string> {
   const modelsToTry = Array.from(new Set([primaryModel, ...GEMINI_FALLBACK_MODELS]));
 
   let lastError: any = null;
-  for (const model of modelsToTry) {
-    try {
-      return await callGeminiForModel(model, apiKey, messages);
-    } catch (err: any) {
-      lastError = err;
-      if (err.status !== 404 && err.status !== 400) break;
+
+  // Try each API key in rotation if previous key runs out of tokens / hits rate limit / errors out
+  for (const apiKey of apiKeys) {
+    for (const model of modelsToTry) {
+      try {
+        return await callGeminiForModel(model, apiKey, messages);
+      } catch (err: any) {
+        lastError = err;
+        if (err.status === 404 || err.status === 400 || err.status === 503) {
+          console.warn(`[Edith AI] Model ${model} returned HTTP ${err.status}. Trying next model...`);
+          continue;
+        }
+        console.warn(
+          `[Edith AI] Key ending with ...${apiKey.slice(-4)} failed (status ${err.status}). Switching to next available API key.`,
+        );
+        break; // Switch to next API key
+      }
     }
   }
 
-  throw lastError || new Error('Failed to reach Gemini API');
+  throw lastError || new Error('Failed to reach Gemini API across all configured API keys.');
 }
 
 /* ────────────────────────── CRUD & Controller Export ────────────────────────── */
@@ -341,8 +376,17 @@ export async function sendMessage(
   let reply: string;
   try {
     reply = await callGemini(geminiMessages);
-  } catch (err) {
-    throw err;
+  } catch (err: any) {
+    console.error('[Edith AI] Call failed:', err?.message || err);
+    if (err?.status === 401) {
+      reply =
+        '[Edith AI Notice]: The configured Google Gemini API key is invalid or unauthorized (HTTP 401). Please check your GEMINI_API_KEY setting in api/.env.';
+    } else if (err?.status === 503 || err?.status === 429) {
+      reply =
+        '[Edith AI Notice]: Google Gemini API models are currently experiencing high demand or rate limits (HTTP 503/429). Please wait a moment and try sending your message again.';
+    } else {
+      reply = `[Edith AI Offline Mode]: Unable to process request via Gemini API (${err?.message || 'Connection error'}). Please verify your GEMINI_API_KEY in api/.env.`;
+    }
   }
 
   // Save AI assistant message

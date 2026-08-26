@@ -81,11 +81,9 @@ export function Sidebar({
           aria-label="Go to home page"
           className="flex items-center gap-3 group"
         >
-          <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-900/30">
-            <span className="text-white font-black text-lg italic tracking-tighter">
-              P
-            </span>
-            <div className="absolute inset-0 bg-purple-500 blur-md opacity-40 rounded-xl -z-10" />
+          <div className="relative w-9 h-9 rounded-full overflow-hidden shadow-lg shadow-purple-900/30 shrink-0 border border-purple-500/30">
+            <img src="/logo.svg" alt="Progress Copilot Logo" className="w-full h-full object-cover rounded-full" />
+            <div className="absolute inset-0 bg-purple-500 blur-md opacity-25 rounded-full -z-10" />
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">

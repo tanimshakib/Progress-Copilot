@@ -575,8 +575,8 @@ function TargetCard({
         <span
           className={
             target.status === 'COMPLETED'
-              ? 'inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30'
-              : 'inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30'
+              ? 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[100px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-400/40 shadow-sm shrink-0'
+              : 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[90px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-500/20 text-amber-600 dark:text-amber-300 ring-1 ring-amber-400/40 shadow-sm shrink-0'
           }
         >
           {target.status === 'COMPLETED' ? '✓ Completed' : 'Incomplete'}
@@ -597,7 +597,7 @@ function TargetCard({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="flex-1 h-9 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-200 font-semibold text-sm border border-purple-400/30 transition-colors"
+          className="flex-1 h-9 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-900 dark:text-purple-200 font-bold text-sm border border-purple-400/30 transition-colors"
         >
           {expanded ? 'Hide Progress' : 'View Progress'}
         </button>
@@ -713,7 +713,7 @@ function SubTaskRow({
         onClick={onToggle}
         aria-label={task.isCompleted ? 'Mark incomplete' : 'Mark complete'}
         className={
-          'h-5 w-5 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ' +
+          'h-5 w-5 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ' +
           (task.isCompleted
             ? 'bg-emerald-500 border-emerald-400 text-white'
             : 'border-white/30 hover:border-purple-400 hover:bg-purple-500/10')
@@ -747,7 +747,7 @@ function SubTaskRow({
 /* ─────────────────────────── shared bits ─────────────────────────── */
 
 const inputCls =
-  'h-10 w-full px-3 rounded-lg bg-white/5 border border-white/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50';
+  'h-10 w-full px-3 rounded-lg bg-slate-100/90 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50';
 
 function Field({
   label,

@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
+import { DashboardCard } from '../components/dashboard/DashboardCard';
+import { TaskCompletionTrendChart } from '../components/dashboard/TaskCompletionTrendChart';
+import { PointsDistributionChart } from '../components/dashboard/PointsDistributionChart';
 
 export function ReportsPage() {
   const { addToast } = useToast();
@@ -65,6 +68,9 @@ export function ReportsPage() {
   const progressScore = stats?.progressScore ?? 0;
   const avatar = user?.avatar;
   const initial = (user?.fullName || '?').trim().charAt(0).toUpperCase();
+
+  const tasksCompletedLast30Days = data?.tasksCompletedLast30Days || [];
+  const pointsDistribution = data?.pointsDistribution || { high: 0, medium: 0, low: 0 };
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -269,6 +275,23 @@ export function ReportsPage() {
               </div>
               <p className="text-xs text-slate-500 dark:text-violet-300/70 mt-3">Organized by semester tracks</p>
             </div>
+          </div>
+
+          {/* ─── Trend + Points distribution charts ─────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <DashboardCard
+              title="30-Day Task Completion Trend"
+              subtitle="Daily task completions over the last 30 days."
+            >
+              <TaskCompletionTrendChart data={tasksCompletedLast30Days} />
+            </DashboardCard>
+
+            <DashboardCard
+              title="Points Distribution"
+              subtitle="Points earned by target priority (HIGH, MEDIUM, LOW)."
+            >
+              <PointsDistributionChart data={pointsDistribution} />
+            </DashboardCard>
           </div>
         </div>
       )}
