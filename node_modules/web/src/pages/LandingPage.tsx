@@ -34,9 +34,9 @@ function Hero({ isAuthed }: { isAuthed: boolean }) {
   const navigate = useNavigate();
   return (
     <section id="home" className="relative pt-8 md:pt-24 pb-20 px-4 md:px-8 max-w-7xl mx-auto overflow-hidden">
-    <div
-      className="absolute -top-30 left-1/2 -translate-x-1/2 w-[520px] h-[320px] bg-purple-500/30 rounded-full blur-[140px] pointer-events-none">
-    </div>      <div className="absolute top-1/4 right-10 w-76 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow" />
+      <div
+        className="absolute -top-30 left-1/2 -translate-x-1/2 w-[520px] h-[320px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none">
+      </div>      <div className="absolute top-1/4 right-10 w-76 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none animate-glow" />
       <div className="absolute top-1/3 left-10 w-80 h-80 bg-pink-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">

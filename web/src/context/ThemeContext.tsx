@@ -9,18 +9,6 @@ import {
 import type { ReactNode } from 'react';
 import { api } from '../lib/api';
 
-/**
- * ThemeContext — light/dark mode with Tailwind's `dark` class strategy.
- *
- *  - Initial preference: localStorage → system prefers-color-scheme.
- *  - Applies the `dark` class on <html> so Tailwind's `dark:` variants work.
- *  - Persists to localStorage synchronously so a reload keeps the choice.
- *  - On mount, if the authenticated user has a stored theme on the server,
- *    it is reconciled into local state.
- *  - On every change we PATCH /api/user/me (best-effort, no await) so the
- *    choice survives across devices.
- */
-
 export type Theme = 'light' | 'dark';
 
 type ThemeContextValue = {
@@ -29,13 +17,19 @@ type ThemeContextValue = {
   toggle: () => void;
 };
 
-const STORAGE_KEY = 'pc:theme';
+const STORAGE_KEY_PRIMARY = 'progress_copilot_theme';
+const STORAGE_KEY_SECONDARY = 'pc:theme';
+
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function detectInitial(): Theme {
   if (typeof window === 'undefined') return 'dark';
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
+  const storedPrimary = window.localStorage.getItem(STORAGE_KEY_PRIMARY);
+  if (storedPrimary === 'light' || storedPrimary === 'dark') return storedPrimary;
+  
+  const storedSecondary = window.localStorage.getItem(STORAGE_KEY_SECONDARY);
+  if (storedSecondary === 'light' || storedSecondary === 'dark') return storedSecondary;
+
   return window.matchMedia('(prefers-color-scheme: light)').matches
     ? 'light'
     : 'dark';
@@ -69,23 +63,21 @@ export function ThemeProvider({
     if (serverTheme === theme) return;
     setThemeState(serverTheme);
     try {
-      window.localStorage.setItem(STORAGE_KEY, serverTheme);
+      window.localStorage.setItem(STORAGE_KEY_PRIMARY, serverTheme);
+      window.localStorage.setItem(STORAGE_KEY_SECONDARY, serverTheme);
     } catch {
       /* ignore */
     }
-    // We only want to react to a *change* in serverTheme, not to local updates.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverTheme]);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(STORAGE_KEY_PRIMARY, next);
+      window.localStorage.setItem(STORAGE_KEY_SECONDARY, next);
     } catch {
       /* localStorage may be unavailable in private mode */
     }
-    // Best-effort server sync. We swallow errors — the UI choice is already
-    // committed locally; a failed PATCH is logged for the next session.
     api
       .patch('/api/user/me', { theme: next })
       .catch(() => undefined);

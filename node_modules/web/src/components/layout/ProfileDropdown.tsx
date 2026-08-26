@@ -121,19 +121,23 @@ export function ProfileDropdown({
                 {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
               </span>
               <span className="font-semibold text-slate-900 dark:text-white">
-                {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+                {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
               </span>
             </span>
             <span
-              className={`relative inline-flex h-6 w-11 rounded-full transition-colors ${
-                theme === 'dark' ? 'bg-fuchsia-500' : 'bg-slate-300'
+              className={`relative inline-flex h-6 w-11 items-center rounded-full p-0.5 transition-colors ${
+                theme === 'dark' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 shadow-glow-indigo' : 'bg-slate-300'
               }`}
             >
-              <span
-                className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                  theme === 'dark' ? 'translate-x-6' : 'translate-x-1'
+              <motion.span
+                layout
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className={`h-5 w-5 rounded-full bg-white shadow-md flex items-center justify-center ${
+                  theme === 'dark' ? 'translate-x-5 text-indigo-700' : 'translate-x-0 text-amber-500'
                 }`}
-              />
+              >
+                {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
+              </motion.span>
             </span>
           </button>
         </div>

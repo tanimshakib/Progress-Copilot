@@ -61,7 +61,7 @@ export function Sidebar({
       className={
         'fixed inset-y-0 left-0 z-30 hidden md:flex md:flex-col ' +
         'border-r border-purple-200/80 dark:border-white/10 ' +
-        'bg-gradient-to-b from-slate-50/95 via-indigo-50/90 to-purple-50/80 dark:from-[#0e091f]/95 dark:via-[#0b0717]/95 dark:to-[#080512]/95 backdrop-blur-xl ' +
+        'bg-gradient-to-b from-slate-50/95 via-indigo-50/90 to-purple-50/80 dark:from-[#140b2a]/95 dark:via-[#0e0720]/95 dark:to-[#070312]/95 backdrop-blur-xl ' +
         'transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' +
         (collapsed ? 'w-[78px]' : 'w-64')
       }

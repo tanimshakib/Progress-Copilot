@@ -89,7 +89,7 @@ export function AIAssistantPage() {
       />
 
       {/* ───── Main ───── */}
-      <section className="flex-1 min-w-0 flex flex-col rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.04] to-white/[0.01] backdrop-blur-xl overflow-hidden">
+      <section className="flex-1 min-w-0 flex flex-col rounded-2xl border border-purple-200/80 dark:border-purple-500/20 bg-gradient-to-br from-white/95 via-indigo-50/80 to-purple-50/60 dark:from-[#160e2e]/90 dark:via-[#100824]/85 dark:to-[#0c061a]/95 backdrop-blur-xl overflow-hidden shadow-sm dark:shadow-lg">
         <ChatTopBar
           title={activeChat?.title ?? 'New chat'}
           isEmpty={!activeChat}
@@ -138,15 +138,15 @@ function ChatSidebar({
   isLoading: boolean;
 }) {
   return (
-    <aside className="w-72 shrink-0 flex flex-col rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.01] backdrop-blur-xl">
-      <div className="p-4 border-b border-white/10">
+    <aside className="w-72 shrink-0 flex flex-col rounded-2xl border border-purple-200/80 dark:border-purple-500/20 bg-gradient-to-b from-white/95 via-indigo-50/80 to-purple-50/60 dark:from-[#160e2e]/90 dark:via-[#100824]/85 dark:to-[#0c061a]/95 backdrop-blur-xl shadow-sm dark:shadow-lg">
+      <div className="p-4 border-b border-purple-200/60 dark:border-purple-500/20">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 flex items-center justify-center text-white font-bold">
             E
           </div>
           <div>
-            <div className="text-white font-semibold leading-tight">Edith</div>
-            <div className="text-[11px] text-gray-400 leading-tight">
+            <div className="text-slate-900 dark:text-white font-bold leading-tight">Edith</div>
+            <div className="text-[11px] text-slate-500 dark:text-gray-400 leading-tight font-medium">
               Your Progress Copilot
             </div>
           </div>
@@ -218,10 +218,10 @@ function ChatRow({
     <li>
       <div
         className={[
-          'group rounded-lg px-2.5 py-2 flex items-center gap-2 cursor-pointer',
+          'group rounded-lg px-2.5 py-2 flex items-center gap-2 cursor-pointer transition-colors',
           active
-            ? 'bg-white/10 ring-1 ring-purple-400/40'
-            : 'hover:bg-white/5',
+            ? 'bg-purple-100/80 dark:bg-white/10 ring-1 ring-purple-400/50 dark:ring-purple-400/40'
+            : 'hover:bg-purple-50/80 dark:hover:bg-white/5',
         ].join(' ')}
         onClick={() => !editing && onSelect()}
       >
@@ -237,10 +237,10 @@ function ChatRow({
               if (e.key === 'Escape') setEditing(false);
             }}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none border-b border-purple-400/60"
+            className="flex-1 min-w-0 bg-transparent text-sm text-slate-900 dark:text-white outline-none border-b border-purple-400/60"
           />
         ) : (
-          <span className="flex-1 min-w-0 truncate text-sm text-gray-200">
+          <span className="flex-1 min-w-0 truncate text-sm font-medium text-slate-800 dark:text-gray-200">
             {chat.title}
           </span>
         )}
@@ -288,9 +288,9 @@ function ChatTopBar({
   onToggleAgent: () => void;
 }) {
   return (
-    <header className="flex items-center justify-between gap-4 px-5 py-3 border-b border-white/10">
+    <header className="flex items-center justify-between gap-4 px-5 py-3 border-b border-purple-200/60 dark:border-purple-500/20">
       <div className="min-w-0">
-        <div className="text-xs uppercase tracking-wider text-gray-500">
+        <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-gray-500 font-semibold">
           Edith
         </div>
         <h2 className="text-slate-900 dark:text-white font-semibold truncate">
@@ -298,7 +298,7 @@ function ChatTopBar({
         </h2>
       </div>
       <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-        <span className="text-xs text-gray-300">Agent Mode</span>
+        <span className="text-xs text-slate-600 dark:text-gray-300 font-medium">Agent Mode</span>
         <span
           onClick={onToggleAgent}
           role="switch"
@@ -470,14 +470,14 @@ function Composer({
   return (
     <form
       onSubmit={onSubmit}
-      className="border-t border-white/10 p-3 sm:p-4 bg-black/20"
+      className="border-t border-purple-200/60 dark:border-purple-500/20 px-4 sm:px-5 pt-3 pb-2"
     >
       {error && (
-        <div className="mb-2 mx-1 text-xs text-red-300 bg-red-500/10 ring-1 ring-red-500/30 rounded-lg px-3 py-2">
+        <div className="mb-2 text-xs text-red-600 dark:text-red-300 bg-red-500/10 ring-1 ring-red-500/30 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
-      <div className="flex items-end gap-2 rounded-2xl border border-slate-300 dark:border-white/10 bg-slate-100/90 dark:bg-white/[0.05] focus-within:ring-2 focus-within:ring-purple-500/40 transition">
+      <div className="flex items-end gap-2 rounded-xl border border-purple-200/80 dark:border-purple-500/25 bg-white/90 dark:bg-[#161F30]/80 focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-400 shadow-sm transition">
         <textarea
           ref={textareaRef}
           value={value}
@@ -490,18 +490,18 @@ function Composer({
           }}
           placeholder="Message Edith…"
           rows={1}
-          className="flex-1 min-w-0 resize-none bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 px-4 py-3 outline-none"
+          className="flex-1 min-w-0 resize-none !bg-transparent !border-0 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 px-4 py-3 outline-none focus:ring-0"
         />
         <button
           type="submit"
           disabled={busy || !value.trim()}
-          className="m-1.5 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow disabled:opacity-40 disabled:cursor-not-allowed hover:from-purple-500 hover:to-fuchsia-500 transition"
+          className="m-1.5 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-3 sm:px-4 py-2 text-sm font-bold text-white shadow-md shadow-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 transition-all"
         >
           <SendIcon />
           <span className="hidden sm:inline">Send</span>
         </button>
       </div>
-      <p className="mt-1.5 text-[11px] text-gray-500 text-center">
+      <p className="mt-1.5 text-[10px] text-slate-400 dark:text-gray-500 text-center">
         Edith can make mistakes — verify important info.
       </p>
     </form>

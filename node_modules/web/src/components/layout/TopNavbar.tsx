@@ -71,11 +71,11 @@ export function TopNavbar() {
   return (
     <header
       className={
-        'sticky top-0 z-20 h-16 border-b border-purple-200/80 dark:border-white/10 ' +
-        'bg-slate-50/85 dark:bg-[#0b0717]/85 backdrop-blur-xl ' +
+        'sticky top-0 z-20 h-16 border-b border-purple-200/80 dark:border-purple-500/20 ' +
+        'bg-gradient-to-r from-slate-50/95 via-indigo-50/90 to-purple-50/90 dark:from-[#140b2a]/95 dark:via-[#0e0720]/95 dark:to-[#080415]/95 backdrop-blur-xl shadow-sm dark:shadow-lg ' +
         'text-slate-900 dark:text-white ' +
         'flex items-center justify-between gap-4 px-4 sm:px-6 ' +
-        'transition-colors duration-300'
+        'transition-all duration-300'
       }
     >
       {/* ────── Left: page title ────── */}

@@ -270,25 +270,29 @@ export function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => handleThemeChange('light')}
-                        className={`p-4 rounded-xl border flex items-center justify-center gap-3 transition font-bold text-sm ${
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all transform active:scale-95 font-bold text-sm ${
                           activeTheme === 'light'
-                            ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                            : 'border-purple-200 dark:border-cardBorder text-slate-700 dark:text-violet-200 hover:bg-purple-500/10'
+                            ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white border-purple-500 shadow-glow-indigo ring-2 ring-purple-400'
+                            : 'border-slate-300 dark:border-cardBorder text-slate-700 dark:text-violet-200 hover:bg-purple-500/10 bg-white dark:bg-[#161F30]'
                         }`}
                       >
-                        <Sun size={20} /> Light Mode
+                        <Sun size={24} className={activeTheme === 'light' ? 'text-amber-300' : 'text-amber-500'} />
+                        <span>Light Mode</span>
+                        <span className="text-[10px] opacity-80 font-normal">Clean Slate & Soft Gradients</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleThemeChange('dark')}
-                        className={`p-4 rounded-xl border flex items-center justify-center gap-3 transition font-bold text-sm ${
+                        className={`p-4 rounded-xl border flex flex-col items-center justify-center gap-2 transition-all transform active:scale-95 font-bold text-sm ${
                           activeTheme === 'dark'
-                            ? 'bg-purple-600 text-white border-purple-600 shadow-md'
-                            : 'border-purple-200 dark:border-cardBorder text-slate-700 dark:text-violet-200 hover:bg-purple-500/10'
+                            ? 'bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 text-white border-purple-500 shadow-glow-purple ring-2 ring-purple-400'
+                            : 'border-slate-300 dark:border-cardBorder text-slate-700 dark:text-violet-200 hover:bg-purple-500/10 bg-white dark:bg-[#161F30]'
                         }`}
                       >
-                        <Moon size={20} /> Dark Mode
+                        <Moon size={24} className={activeTheme === 'dark' ? 'text-purple-200' : 'text-purple-400'} />
+                        <span>Dark Mode</span>
+                        <span className="text-[10px] opacity-80 font-normal">Deep Obsidian & Neon Glows</span>
                       </button>
                     </div>
                   </div>

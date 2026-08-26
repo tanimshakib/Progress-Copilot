@@ -9,21 +9,7 @@ import { getErrorMessage } from '../lib/api';
 import type { Priority, Target, Task, TargetSubTaskSeed } from '../lib/types';
 
 /**
- * TargetsPage — Future Goal + Target list with sub-task progress.
- *
- * Layout:
- *   ┌────────────────────────────────────────────┐
- *   │  Future Goal  (editable card)              │
- *   ├────────────────────────────────────────────┤
- *   │  [ + Add Target ]                          │
- *   │  ┌──────────┐ ┌──────────┐ ┌──────────┐   │
- *   │  │ Target 1 │ │ Target 2 │ │ Target 3 │   │
- *   │  └──────────┘ └──────────┘ └──────────┘   │
- *   └────────────────────────────────────────────┘
- *
- * Each Target card can be expanded to show a horizontal completion chart
- * and an inline sub-task list. Sub-tasks are real tasks on the backend
- * (targetId is set) and they participate in the points/streak pipeline.
+ * TargetsPage — Future Goal + Target list with section focus view & status filtering.
  */
 
 export function TargetsPage() {
@@ -33,14 +19,19 @@ export function TargetsPage() {
   const location = useLocation();
 
   const [showAdd, setShowAdd] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'INCOMPLETE' | 'COMPLETED'>('ALL');
 
   // If the Tasks page sent us here with a focusTargetId (via router state),
-  // we pre-expand that card so the user lands on View Progress directly.
-  const focusTargetId = (location.state as { focusTargetId?: string } | null)?.focusTargetId;
+  // we pre-select that target for section focus view.
+  const routeFocusTargetId = (location.state as { focusTargetId?: string } | null)?.focusTargetId;
+  const [focusedTargetId, setFocusedTargetId] = useState<string | null>(routeFocusTargetId || null);
 
-  // Stable callback so child cards don't re-render on every TargetsPage render.
-  // Updates only the affected card's status — no full grid reload, so the
-  // expanded card stays mounted and the user's input is preserved.
+  useEffect(() => {
+    if (routeFocusTargetId) {
+      setFocusedTargetId(routeFocusTargetId);
+    }
+  }, [routeFocusTargetId]);
+
   const handleProgressChanged = useCallback(
     async (targetId: string, nextStatus: 'INCOMPLETE' | 'COMPLETED') => {
       await update(targetId, { status: nextStatus });
@@ -57,75 +48,397 @@ export function TargetsPage() {
     [remove, refresh],
   );
 
+  // Filter & Sort Logic:
+  // - Incomplete targets: Old to Recent (oldest created first)
+  // - Completed targets: Recent to Old (newest completed/updated first)
+  // - ALL: Incompletes (Old -> Recent) at top, Completed (Recent -> Old) at bottom
+  const { sortedIncompletes, sortedCompleteds, displayTargets } = useMemo(() => {
+    const incompletes = targets.filter((t) => t.status !== 'COMPLETED');
+    const completeds = targets.filter((t) => t.status === 'COMPLETED');
+
+    const sortedInc = [...incompletes].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
+    const sortedComp = [...completeds].sort(
+      (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime(),
+    );
+
+    let list: Target[] = [];
+    if (filterStatus === 'INCOMPLETE') {
+      list = sortedInc;
+    } else if (filterStatus === 'COMPLETED') {
+      list = sortedComp;
+    } else {
+      list = [...sortedInc, ...sortedComp];
+    }
+
+    return {
+      sortedIncompletes: sortedInc,
+      sortedCompleteds: sortedComp,
+      displayTargets: list,
+    };
+  }, [targets, filterStatus]);
+
+  const focusedTarget = useMemo(() => {
+    if (!focusedTargetId) return null;
+    return targets.find((t) => t.id === focusedTargetId) || null;
+  }, [targets, focusedTargetId]);
+
   return (
     <div className="space-y-6">
-      <FutureGoalCard
-        goal={goal}
-        loading={goalLoading}
-        onSave={saveGoal}
-      />
+      {!focusedTarget && (
+        <FutureGoalCard
+          goal={goal}
+          loading={goalLoading}
+          onSave={saveGoal}
+        />
+      )}
 
       <section>
-        <header className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-              Your Targets
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Long-term goals with measurable sub-tasks.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-900/30 hover:shadow-xl hover:brightness-110 transition-all"
-          >
-            <PlusIcon />
-            {showAdd ? 'Close' : 'Add Target'}
-          </button>
-        </header>
-
-        <AnimatePresence>
-          {showAdd && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden mb-4"
-            >
-              <AddTargetForm
-                onCancel={() => setShowAdd(false)}
-                onCreate={async (data) => {
-                  await create(data);
-                  setShowAdd(false);
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {loading ? (
-          <SkeletonGrid />
-        ) : error ? (
-          <ErrorBanner message={error} onRetry={reload} />
-        ) : targets.length === 0 ? (
-          <EmptyState />
+        {/* If a single target is focused for full section view */}
+        {focusedTarget ? (
+          <TargetFocusSection
+            target={focusedTarget}
+            onBack={() => setFocusedTargetId(null)}
+            onDelete={() => handleDelete(focusedTarget.id)}
+            onProgressChanged={handleProgressChanged}
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {targets.map((t) => (
-              <TargetCard
-                key={t.id}
-                target={t}
-                onDelete={() => handleDelete(t.id)}
-                onProgressChanged={handleProgressChanged}
-                forceExpand={t.id === focusTargetId}
-              />
-            ))}
-          </div>
+          <>
+            {/* Targets Header with Add Button & Filter Tabs */}
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
+                  Your Targets
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Long-term goals with measurable sub-tasks.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Filter Tabs */}
+                <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-200/80 dark:bg-white/5 border border-purple-200/60 dark:border-white/10 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('ALL')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      filterStatus === 'ALL'
+                        ? 'bg-purple-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    All ({targets.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('INCOMPLETE')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      filterStatus === 'INCOMPLETE'
+                        ? 'bg-amber-500 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Incomplete ({sortedIncompletes.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFilterStatus('COMPLETED')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      filterStatus === 'COMPLETED'
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    Completed ({sortedCompleteds.length})
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAdd((v) => !v)}
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-900/30 hover:shadow-xl hover:brightness-110 transition-all"
+                >
+                  <PlusIcon />
+                  {showAdd ? 'Close' : 'Add Target'}
+                </button>
+              </div>
+            </header>
+
+            <AnimatePresence>
+              {showAdd && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden mb-4"
+                >
+                  <AddTargetForm
+                    onCancel={() => setShowAdd(false)}
+                    onCreate={async (data) => {
+                      await create(data);
+                      setShowAdd(false);
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {loading ? (
+              <SkeletonGrid />
+            ) : error ? (
+              <ErrorBanner message={error} onRetry={reload} />
+            ) : displayTargets.length === 0 ? (
+              <EmptyState filterStatus={filterStatus} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {displayTargets.map((t) => (
+                  <TargetCard
+                    key={t.id}
+                    target={t}
+                    onDelete={() => handleDelete(t.id)}
+                    onOpenProgress={() => setFocusedTargetId(t.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
     </div>
+  );
+}
+
+/* ─────────────────────────── Single Target Focus View ─────────────────────────── */
+
+function TargetFocusSection({
+  target,
+  onBack,
+  onDelete,
+  onProgressChanged,
+}: {
+  target: Target;
+  onBack: () => void;
+  onDelete: () => Promise<void> | void;
+  onProgressChanged: (targetId: string, nextStatus: 'INCOMPLETE' | 'COMPLETED') => Promise<void>;
+}) {
+  const [subTasks, setSubTasks] = useState<Task[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const onProgressChangedRef = useRef(onProgressChanged);
+  const targetStatusRef = useRef(target.status);
+  onProgressChangedRef.current = onProgressChanged;
+  targetStatusRef.current = target.status;
+
+  const fetchSubTasks = useCallback(async () => {
+    setLoadingTasks(true);
+    try {
+      const list = await tasksApi.listByTarget(target.id);
+      setSubTasks(list);
+      const allDone = list.length > 0 && list.every((t) => t.isCompleted);
+      const nextStatus: 'INCOMPLETE' | 'COMPLETED' = allDone ? 'COMPLETED' : 'INCOMPLETE';
+      if (nextStatus !== targetStatusRef.current) {
+        onProgressChangedRef.current(target.id, nextStatus);
+      }
+    } catch {
+      setSubTasks([]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  }, [target.id]);
+
+  useEffect(() => {
+    fetchSubTasks();
+  }, [fetchSubTasks]);
+
+  const { completed, total, percent } = useMemo(() => {
+    const t = subTasks.length;
+    const c = subTasks.filter((x) => x.isCompleted).length;
+    return {
+      completed: c,
+      total: t,
+      percent: t === 0 ? 0 : Math.round((c / t) * 100),
+    };
+  }, [subTasks]);
+
+  const addSubTask = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    setBusy(true);
+    try {
+      const created = await tasksApi.create({
+        title: newTitle.trim(),
+        targetId: target.id,
+      });
+      setSubTasks((prev) => [created, ...prev]);
+      setNewTitle('');
+    } catch {
+      /* noop */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleSubTask = async (task: Task) => {
+    try {
+      await tasksApi.toggle(task.id, !task.isCompleted);
+      await fetchSubTasks();
+    } catch {
+      /* noop */
+    }
+  };
+
+  const deleteSubTask = async (id: string) => {
+    try {
+      await tasksApi.remove(id);
+      await fetchSubTasks();
+    } catch {
+      /* noop */
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="space-y-6 max-w-5xl mx-auto"
+    >
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 text-purple-900 dark:text-purple-200 font-bold text-sm border border-purple-400/30 transition-all shadow-xs"
+        >
+          <span className="text-lg">←</span> Back to All Targets
+        </button>
+
+        <button
+          type="button"
+          onClick={async () => {
+            await onDelete();
+            onBack();
+          }}
+          className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-rose-400/30 text-sm font-semibold transition-colors"
+        >
+          <TrashIcon />
+          <span>Delete Target</span>
+        </button>
+      </div>
+
+      {/* Main Single Target Section Focus Card */}
+      <div className="rounded-3xl border border-purple-200/80 dark:border-purple-500/20 bg-gradient-to-br from-white via-indigo-50/70 to-purple-50/50 dark:from-[#16102e] dark:to-[#0b0718] p-6 sm:p-8 shadow-xl backdrop-blur-xl">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+          <div>
+            <span className="text-[11px] uppercase tracking-widest font-black text-purple-600 dark:text-purple-400">
+              Target Detailed View
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
+              {target.title}
+            </h2>
+            {target.description && (
+              <p className="text-sm text-slate-600 dark:text-gray-400 mt-2 max-w-3xl leading-relaxed">
+                {target.description}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide shrink-0">
+            <span
+              className={
+                target.status === 'COMPLETED'
+                  ? 'inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/40 shadow-xs'
+                  : 'inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/40 shadow-xs'
+              }
+            >
+              {target.status === 'COMPLETED' ? '✓ Completed' : 'Incomplete'}
+            </span>
+            <PriorityPill priority={target.priority} />
+            {target.deadline && (
+              <span className="inline-flex items-center gap-1 px-3 h-7 rounded-full bg-slate-200/70 dark:bg-white/5 text-slate-700 dark:text-gray-300 ring-1 ring-slate-300 dark:ring-white/10 font-semibold text-xs">
+                <CalendarIcon />
+                {formatDate(target.deadline)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Progress Bar Container */}
+        <div className="bg-white/80 dark:bg-white/[0.03] border border-purple-200/60 dark:border-white/5 rounded-2xl p-5 mb-6 shadow-sm">
+          <div className="flex items-center justify-between mb-2 text-sm">
+            <span className="font-bold text-slate-800 dark:text-gray-200">
+              Sub-task Completion Progress
+            </span>
+            <span className="font-extrabold text-purple-700 dark:text-purple-300 tabular-nums">
+              {completed}/{total} · {percent}%
+            </span>
+          </div>
+          <div className="h-3.5 rounded-full bg-slate-200/80 dark:bg-white/5 overflow-hidden ring-1 ring-slate-300/80 dark:ring-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 transition-all duration-500"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <div className="mt-2.5 flex items-center gap-4 text-xs font-bold uppercase tracking-wide">
+            <span className="text-emerald-700 dark:text-emerald-300">Completed {completed}</span>
+            <span className="text-slate-400 dark:text-gray-500">·</span>
+            <span className="text-amber-700 dark:text-amber-300">Remaining {Math.max(0, total - completed)}</span>
+          </div>
+        </div>
+
+        {/* Sub-tasks Checklist */}
+        <div className="space-y-4 mb-6">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+            Sub-tasks Checklist ({subTasks.length})
+          </h3>
+          {loadingTasks ? (
+            <div className="space-y-2">
+              <div className="h-12 rounded-xl bg-slate-100 dark:bg-white/5 animate-pulse" />
+              <div className="h-12 rounded-xl bg-slate-100 dark:bg-white/5 animate-pulse" />
+            </div>
+          ) : subTasks.length === 0 ? (
+            <p className="text-sm text-slate-500 italic py-2">
+              No sub-tasks yet — add one below to start tracking your progress!
+            </p>
+          ) : (
+            <ul className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {subTasks.map((t) => (
+                <SubTaskRow
+                  key={t.id}
+                  task={t}
+                  onToggle={() => toggleSubTask(t)}
+                  onDelete={() => deleteSubTask(t.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Quick Add Sub-task Form */}
+        <form onSubmit={addSubTask} className="flex gap-3 pt-4 border-t border-purple-200/60 dark:border-white/10">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Add a new sub-task to this target…"
+            maxLength={200}
+            className={inputCls + ' flex-1'}
+          />
+          <button
+            type="submit"
+            disabled={busy || !newTitle.trim()}
+            className="h-10 px-5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm disabled:opacity-50 transition-all shadow-md shadow-purple-600/30"
+          >
+            Add Sub-task
+          </button>
+        </form>
+      </div>
+    </motion.div>
   );
 }
 
@@ -145,8 +458,6 @@ function FutureGoalCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep the input in sync with the loaded goal — covers the case where
-  // the user opens the page for the first time and the goal is null.
   useEffect(() => {
     if (!editing) setTitle(goal?.title ?? '');
   }, [goal, editing]);
@@ -168,7 +479,7 @@ function FutureGoalCard({
 
   return (
     <section
-      className="rounded-2xl border border-white/10 p-5 sm:p-6 bg-gradient-to-br from-purple-600/15 via-fuchsia-500/10 to-transparent backdrop-blur-xl shadow-xl shadow-purple-900/20"
+      className="rounded-2xl border border-purple-200/80 dark:border-white/10 p-5 sm:p-6 bg-gradient-to-br from-purple-600/15 via-fuchsia-500/10 to-transparent backdrop-blur-xl shadow-md dark:shadow-xl shadow-purple-900/20"
     >
       <div className="flex items-start gap-4">
         <div className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 text-white shadow-lg shadow-purple-900/30">
@@ -177,7 +488,7 @@ function FutureGoalCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-purple-300">
+              <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-purple-600 dark:text-purple-300">
                 Future Goal
               </p>
               <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
@@ -188,7 +499,7 @@ function FutureGoalCard({
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold text-purple-200 hover:text-white border border-purple-400/30 hover:bg-purple-500/10 transition-colors"
+                className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-semibold text-purple-700 dark:text-purple-200 hover:text-purple-900 dark:hover:text-white border border-purple-400/30 hover:bg-purple-500/10 transition-colors"
               >
                 <PencilIcon />
                 {goal ? 'Edit' : 'Set'}
@@ -267,8 +578,6 @@ function AddTargetForm({
   const [description, setDescription] = useState('');
   const [deadline, setDeadline] = useState('');
   const [priority, setPriority] = useState<Priority>('MEDIUM');
-  // Always start with at least one sub-task row so the form can't submit
-  // empty — the backend also enforces a min of 1.
   const [subTasks, setSubTasks] = useState<SubTaskDraft[]>([{ title: '', deadline: '' }]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -318,9 +627,9 @@ function AddTargetForm({
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl border border-white/10 p-5 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl shadow-xl shadow-black/30 space-y-3"
+      className="rounded-2xl border border-purple-200/80 dark:border-white/10 p-5 bg-gradient-to-br from-white/95 via-indigo-50/70 to-purple-50/50 dark:from-white/[0.06] dark:to-white/[0.02] backdrop-blur-xl shadow-xl space-y-3"
     >
-      <h3 className="text-lg font-bold text-white">New Target</h3>
+      <h3 className="text-lg font-bold text-slate-900 dark:text-white">New Target</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Title" required>
           <input
@@ -363,21 +672,21 @@ function AddTargetForm({
         </Field>
       </div>
 
-      {/* ─── Sub-task section (minimum 1 row) ─── */}
+      {/* Sub-task section */}
       <div className="pt-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
               Sub-tasks
             </span>
-            <span className="text-[10px] text-rose-300 font-semibold">
+            <span className="text-[10px] text-rose-500 dark:text-rose-300 font-semibold">
               * at least 1 required
             </span>
           </div>
           <button
             type="button"
             onClick={addSubTaskRow}
-            className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-200 text-xs font-semibold border border-purple-400/30 transition-colors"
+            className="inline-flex items-center gap-1 h-8 px-3 rounded-full bg-purple-600/20 hover:bg-purple-600/30 text-purple-900 dark:text-purple-200 text-xs font-bold border border-purple-400/30 transition-colors"
           >
             <PlusIcon />
             Add row
@@ -394,7 +703,7 @@ function AddTargetForm({
                   'rounded-lg border p-2 flex flex-col sm:flex-row sm:items-center gap-2 ' +
                   (empty
                     ? 'border-rose-500/40 bg-rose-500/5'
-                    : 'border-white/10 bg-white/5')
+                    : 'border-purple-200/80 dark:border-white/10 bg-white/60 dark:bg-white/5')
                 }
               >
                 <div className="flex-1">
@@ -404,21 +713,21 @@ function AddTargetForm({
                     onChange={(e) => setSubTask(idx, { title: e.target.value })}
                     placeholder={`Sub-task #${idx + 1} — e.g. Watch Module 1 lectures`}
                     maxLength={200}
-                    className="h-9 w-full px-3 rounded-md bg-white/5 border border-white/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                    className="h-9 w-full px-3 rounded-md bg-white/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                   />
                 </div>
                 <input
                   type="date"
                   value={s.deadline}
                   onChange={(e) => setSubTask(idx, { deadline: e.target.value })}
-                  className="h-9 px-3 rounded-md bg-white/5 border border-white/10 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/50 sm:w-44"
+                  className="h-9 px-3 rounded-md bg-white/80 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/50 sm:w-44"
                 />
                 <button
                   type="button"
                   onClick={() => removeSubTaskRow(idx)}
                   disabled={subTasks.length === 1}
                   aria-label="Remove sub-task row"
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-white/10 disabled:opacity-30 disabled:hover:text-gray-400 disabled:hover:bg-transparent transition-colors"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-slate-300 dark:border-white/10 disabled:opacity-30 transition-colors"
                 >
                   <TrashIcon />
                 </button>
@@ -434,14 +743,14 @@ function AddTargetForm({
         <button
           type="button"
           onClick={onCancel}
-          className="h-10 px-4 rounded-lg text-gray-300 hover:text-white border border-white/10"
+          className="h-10 px-4 rounded-lg text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white border border-slate-300 dark:border-white/10 font-semibold text-sm"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={saving || !canSubmit}
-          className="h-10 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-semibold disabled:opacity-50"
+          className="h-10 px-4 rounded-lg bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-bold disabled:opacity-50 text-sm shadow-md shadow-purple-600/30"
         >
           {saving ? 'Creating…' : 'Create Target'}
         </button>
@@ -450,117 +759,19 @@ function AddTargetForm({
   );
 }
 
-/* ─────────────────────────── Target Card ─────────────────────────── */
+/* ─────────────────────────── Target Grid Card ─────────────────────────── */
 
 function TargetCard({
   target,
   onDelete,
-  onProgressChanged,
-  forceExpand,
+  onOpenProgress,
 }: {
   target: Target;
   onDelete: () => Promise<void> | void;
-  onProgressChanged: (targetId: string, nextStatus: 'INCOMPLETE' | 'COMPLETED') => Promise<void>;
-  forceExpand?: boolean;
+  onOpenProgress: () => void;
 }) {
-  // Honor the parent-driven initial expansion (e.g. when we navigated from
-  // the Tasks page and want View Progress open immediately). After the first
-  // mount the user controls `expanded` themselves.
-  const [expanded, setExpanded] = useState<boolean>(!!forceExpand);
-  const [subTasks, setSubTasks] = useState<Task[]>([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  // Stable ref so the [expanded] effect doesn't loop on every render.
-  // We deliberately do NOT depend on `onProgressChanged` or `target.status`
-  // here — both change whenever a sibling re-renders, which would otherwise
-  // re-fire `fetchSubTasks` in an infinite loop. We compare the derived
-  // status against the latest prop value via refs so the comparison stays
-  // current without pulling them into our deps.
-  const onProgressChangedRef = useRef(onProgressChanged);
-  const targetStatusRef = useRef(target.status);
-  onProgressChangedRef.current = onProgressChanged;
-  targetStatusRef.current = target.status;
-
-  const fetchSubTasks = useCallback(async () => {
-    setLoadingTasks(true);
-    try {
-      const list = await tasksApi.listByTarget(target.id);
-      setSubTasks(list);
-      // After a fresh load, let the parent recompute the target status so
-      // the COMPLETED / INCOMPLETE pill flips without waiting for a toggle.
-      const allDone = list.length > 0 && list.every((t) => t.isCompleted);
-      const nextStatus: 'INCOMPLETE' | 'COMPLETED' = allDone ? 'COMPLETED' : 'INCOMPLETE';
-      // Only ping the parent when the derived status actually differs from
-      // what's currently displayed — avoids a pointless PATCH / re-render
-      // (and the infinite-spinner that used to come with it).
-      if (nextStatus !== targetStatusRef.current) {
-        onProgressChangedRef.current(target.id, nextStatus);
-      }
-    } catch {
-      setSubTasks([]);
-    } finally {
-      setLoadingTasks(false);
-    }
-  }, [target.id]);
-
-  useEffect(() => {
-    if (expanded) fetchSubTasks();
-  }, [expanded, fetchSubTasks]);
-
-  const { completed, total, percent } = useMemo(() => {
-    const t = subTasks.length;
-    const c = subTasks.filter((x) => x.isCompleted).length;
-    return {
-      completed: c,
-      total: t,
-      percent: t === 0 ? 0 : Math.round((c / t) * 100),
-    };
-  }, [subTasks]);
-
-  const addSubTask = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
-    setBusy(true);
-    try {
-      const created = await tasksApi.create({
-        title: newTitle.trim(),
-        targetId: target.id,
-      });
-      setSubTasks((prev) => [created, ...prev]);
-      setNewTitle('');
-      // No onProgressChanged here — adding a sub-task can't complete the
-      // target, so the card's pill stays INCOMPLETE without a round-trip.
-    } catch {
-      /* surfaced by tasksApi.create consumer */
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const toggleSubTask = async (task: Task) => {
-    try {
-      await tasksApi.toggle(task.id, !task.isCompleted);
-      await fetchSubTasks();
-    } catch {
-      /* noop */
-    }
-  };
-
-  const deleteSubTask = async (id: string) => {
-    try {
-      await tasksApi.remove(id);
-      await fetchSubTasks();
-    } catch {
-      /* noop */
-    }
-  };
-
   return (
-    <article
-      className="group rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl p-5 shadow-xl shadow-black/30 hover:border-purple-400/40 transition-all"
-    >
+    <article className="group rounded-2xl border border-purple-200/80 dark:border-purple-500/20 bg-gradient-to-br from-white/95 via-indigo-50/60 to-purple-50/40 dark:from-white/[0.06] dark:to-white/[0.02] backdrop-blur-xl p-5 shadow-md dark:shadow-xl hover:border-purple-400/50 dark:hover:border-purple-400/40 transition-all">
       <header className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0">
           <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
@@ -575,8 +786,8 @@ function TargetCard({
         <span
           className={
             target.status === 'COMPLETED'
-              ? 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[100px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 ring-1 ring-emerald-400/40 shadow-sm shrink-0'
-              : 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[90px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-500/20 text-amber-600 dark:text-amber-300 ring-1 ring-amber-400/40 shadow-sm shrink-0'
+              ? 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[100px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/40 shadow-xs shrink-0'
+              : 'inline-flex items-center justify-center gap-1.5 h-6.5 px-3.5 min-w-[90px] whitespace-nowrap rounded-full text-[11px] font-bold uppercase tracking-wide bg-amber-500/20 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/40 shadow-xs shrink-0'
           }
         >
           {target.status === 'COMPLETED' ? '✓ Completed' : 'Incomplete'}
@@ -586,7 +797,7 @@ function TargetCard({
       <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium mb-4">
         <PriorityPill priority={target.priority} />
         {target.deadline && (
-          <span className="inline-flex items-center gap-1 px-2 h-6 rounded-full bg-white/5 text-gray-300 ring-1 ring-white/10">
+          <span className="inline-flex items-center gap-1 px-2 h-6 rounded-full bg-slate-200/60 dark:bg-white/5 text-slate-700 dark:text-gray-300 ring-1 ring-slate-300 dark:ring-white/10 font-semibold">
             <CalendarIcon />
             {formatDate(target.deadline)}
           </span>
@@ -596,96 +807,20 @@ function TargetCard({
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={onOpenProgress}
           className="flex-1 h-9 rounded-lg bg-purple-600/15 hover:bg-purple-600/25 text-purple-900 dark:text-purple-200 font-bold text-sm border border-purple-400/30 transition-colors"
         >
-          {expanded ? 'Hide Progress' : 'View Progress'}
+          View Progress
         </button>
         <button
           type="button"
           onClick={onDelete}
           aria-label="Delete target"
-          className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-white/10 transition-colors"
+          className="h-9 w-9 inline-flex items-center justify-center rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-purple-200/60 dark:border-white/10 transition-colors"
         >
           <TrashIcon />
         </button>
       </div>
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
-              {/* Progress bar */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5 text-xs">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">
-                    Sub-task completion
-                  </span>
-                  <span className="font-bold text-purple-300 tabular-nums">
-                    {completed}/{total} · {percent}%
-                  </span>
-                </div>
-                <div className="h-2.5 rounded-full bg-white/5 overflow-hidden ring-1 ring-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 transition-all duration-500"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-                <div className="mt-1 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wide">
-                  <span className="text-emerald-300">Done {completed}</span>
-                  <span className="text-gray-500">·</span>
-                  <span className="text-amber-300">To-do {Math.max(0, total - completed)}</span>
-                </div>
-              </div>
-
-              {/* Sub-task list */}
-              {loadingTasks ? (
-                <div className="h-12 rounded-lg bg-white/5 animate-pulse" />
-              ) : subTasks.length === 0 ? (
-                <p className="text-xs text-gray-500 italic">
-                  No sub-tasks yet — add one below.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {subTasks.map((t) => (
-                    <SubTaskRow
-                      key={t.id}
-                      task={t}
-                      onToggle={() => toggleSubTask(t)}
-                      onDelete={() => deleteSubTask(t.id)}
-                    />
-                  ))}
-                </ul>
-              )}
-
-              {/* Quick add sub-task */}
-              <form onSubmit={addSubTask} className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="Add a sub-task…"
-                  maxLength={200}
-                  className={inputCls + ' flex-1'}
-                />
-                <button
-                  type="submit"
-                  disabled={busy || !newTitle.trim()}
-                  className="h-10 px-3 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-sm disabled:opacity-50"
-                >
-                  Add
-                </button>
-              </form>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </article>
   );
 }
@@ -702,10 +837,10 @@ function SubTaskRow({
   return (
     <li
       className={
-        'group/row flex items-center gap-2 rounded-lg px-2 py-1.5 ' +
+        'group/row flex items-center gap-2 rounded-xl px-3 py-2 border transition-all ' +
         (task.isCompleted
-          ? 'bg-emerald-500/5 ring-1 ring-emerald-500/20'
-          : 'bg-white/5 ring-1 ring-white/10')
+          ? 'bg-emerald-500/10 dark:bg-emerald-500/5 ring-1 ring-emerald-500/30 border-emerald-500/20'
+          : 'bg-white/90 dark:bg-white/5 ring-1 ring-slate-200/80 dark:ring-white/10 border-slate-200/90 dark:border-white/10 hover:border-purple-400/40 shadow-xs')
       }
     >
       <button
@@ -716,17 +851,17 @@ function SubTaskRow({
           'h-5 w-5 shrink-0 rounded-lg border-2 flex items-center justify-center transition-all ' +
           (task.isCompleted
             ? 'bg-emerald-500 border-emerald-400 text-white'
-            : 'border-white/30 hover:border-purple-400 hover:bg-purple-500/10')
+            : 'border-slate-400 dark:border-white/30 bg-white/50 dark:bg-transparent hover:border-purple-500 hover:bg-purple-500/10')
         }
       >
         {task.isCompleted && <CheckIcon />}
       </button>
       <span
         className={
-          'flex-1 text-sm truncate ' +
+          'flex-1 text-sm truncate font-medium ' +
           (task.isCompleted
-            ? 'text-gray-500 line-through'
-            : 'text-gray-800 dark:text-gray-200')
+            ? 'text-slate-400 dark:text-gray-500 line-through'
+            : 'text-slate-800 dark:text-gray-200')
         }
         title={task.title}
       >
@@ -736,7 +871,7 @@ function SubTaskRow({
         type="button"
         onClick={onDelete}
         aria-label="Delete sub-task"
-        className="opacity-0 group-hover/row:opacity-100 h-6 w-6 inline-flex items-center justify-center rounded text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+        className="opacity-0 group-hover/row:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
       >
         <TrashIcon />
       </button>
@@ -760,7 +895,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-1">
         {label} {required && <span className="text-rose-400">*</span>}
       </span>
       {children}
@@ -769,9 +904,6 @@ function Field({
 }
 
 function PriorityPill({ priority }: { priority: Priority }) {
-  // Solid colored backgrounds with white text give the strongest contrast
-  // against the dark glass cards. The earlier alpha-only pills were nearly
-  // invisible ("priority text color problem").
   const map: Record<Priority, { bg: string; ring: string; label: string }> = {
     HIGH: { bg: 'bg-rose-500', ring: 'ring-rose-300', label: 'HIGH' },
     MEDIUM: { bg: 'bg-amber-500', ring: 'ring-amber-300', label: 'MEDIUM' },
@@ -796,22 +928,30 @@ function SkeletonGrid() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-5 h-40 animate-pulse"
+          className="rounded-2xl border border-purple-200/80 dark:border-white/10 bg-gradient-to-br from-white/95 to-purple-50/50 dark:from-white/[0.06] dark:to-white/[0.02] p-5 h-40 animate-pulse"
         />
       ))}
     </div>
   );
 }
 
-function EmptyState() {
+function EmptyState({ filterStatus }: { filterStatus?: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center bg-white/[0.02]">
-      <div className="mx-auto mb-3 h-12 w-12 rounded-2xl bg-purple-500/15 ring-1 ring-purple-400/30 inline-flex items-center justify-center text-purple-300">
+    <div className="rounded-2xl border border-dashed border-purple-200 dark:border-white/10 p-10 text-center bg-white/50 dark:bg-white/[0.02]">
+      <div className="mx-auto mb-3 h-12 w-12 rounded-2xl bg-purple-500/15 ring-1 ring-purple-400/30 inline-flex items-center justify-center text-purple-600 dark:text-purple-300">
         <TargetIcon />
       </div>
-      <h3 className="text-lg font-bold text-white">No targets yet</h3>
-      <p className="text-sm text-gray-400 mt-1">
-        Add your first target to start tracking measurable sub-tasks.
+      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+        {filterStatus === 'COMPLETED'
+          ? 'No completed targets'
+          : filterStatus === 'INCOMPLETE'
+          ? 'No incomplete targets'
+          : 'No targets yet'}
+      </h3>
+      <p className="text-sm text-slate-500 dark:text-gray-400 mt-1">
+        {filterStatus === 'COMPLETED'
+          ? 'Complete your targets to see them listed here.'
+          : 'Add your first target to start tracking measurable sub-tasks.'}
       </p>
     </div>
   );
@@ -826,11 +966,11 @@ function ErrorBanner({
 }) {
   return (
     <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 flex items-center justify-between gap-3">
-      <p className="text-sm text-rose-200">{message}</p>
+      <p className="text-sm text-rose-800 dark:text-rose-200 font-medium">{message}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="h-9 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-white text-sm font-semibold"
+        className="h-9 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-900 dark:text-white text-sm font-semibold"
       >
         Retry
       </button>

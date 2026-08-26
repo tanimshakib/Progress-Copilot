@@ -28,14 +28,13 @@ Tone:
 ## APP PLATFORM RULES
 Progress Copilot tracks Targets, Tasks, Future Goals, Notes, Courses, GitHub Projects, PDF Reports, Reminders, and Progress Scores.`;
 
-const GEMINI_DEFAULT_MODEL = 'gemini-flash-latest';
+const GEMINI_DEFAULT_MODEL = 'gemini-1.5-flash';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GEMINI_FALLBACK_MODELS = [
-  'gemini-flash-latest',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
   'gemini-1.5-flash',
   'gemini-1.5-pro',
+  'gemini-2.0-flash-exp',
+  'gemini-pro',
 ];
 const TITLE_MAX_LEN = 48;
 
@@ -255,14 +254,23 @@ async function callGemini(messages: ChatMessage[]): Promise<string> {
         return await callGeminiForModel(model, apiKey, messages);
       } catch (err: any) {
         lastError = err;
+
+        // If 503 (model temporarily busy), wait 500ms and try one quick retry
+        if (err.status === 503) {
+          await new Promise((r) => setTimeout(r, 500));
+          try {
+            return await callGeminiForModel(model, apiKey, messages);
+          } catch (retryErr: any) {
+            lastError = retryErr;
+          }
+        }
+
         if (err.status === 404 || err.status === 400 || err.status === 503) {
-          console.warn(`[Edith AI] Model ${model} returned HTTP ${err.status}. Trying next model...`);
           continue;
         }
-        console.warn(
-          `[Edith AI] Key ending with ...${apiKey.slice(-4)} failed (status ${err.status}). Switching to next available API key.`,
-        );
-        break; // Switch to next API key
+
+        // If key auth error (401/429), break to try next API key
+        break;
       }
     }
   }
@@ -343,6 +351,24 @@ export async function sendMessage(
       },
     });
     chatId = freshChat.id;
+  } else {
+    // If user created a empty chat with "+ New Chat" and is now sending the 1st message:
+    const existingChat = await prisma.chatHistory.findUnique({
+      where: { id: chatId },
+      select: { title: true, _count: { select: { messages: true } } },
+    });
+    if (
+      existingChat &&
+      (existingChat.title === 'New Chat' ||
+        existingChat.title === 'New chat' ||
+        existingChat._count.messages <= 1)
+    ) {
+      const newTitle = autoTitleFromPrompt(input.content);
+      await prisma.chatHistory.update({
+        where: { id: chatId },
+        data: { title: newTitle },
+      });
+    }
   }
 
   const existingCount = await prisma.message.count({ where: { chatId } });

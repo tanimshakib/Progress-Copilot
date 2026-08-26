@@ -5,23 +5,17 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import { useTheme } from '../../context/ThemeContext';
 
 const PALETTE = {
   high: '#ef4444',   // rose-500
   medium: '#f59e0b', // amber-500
-  low: '#22c55e',    // emerald-500
+  low: '#10b981',    // emerald-500
 };
 
 /**
- * PointsDistributionChart — donut showing how the user's earned points
- * split across HIGH / MEDIUM / LOW priority tasks.
- *
- * Hidden entirely when there's no data — an empty donut looks broken.
- *
- * Note: we render the legend ourselves (below the chart) instead of
- * using <Legend verticalAlign="bottom" /> — the built-in Legend can
- * push the chart past the card edge on narrow columns. Custom legend
- * keeps everything tucked inside the card.
+ * PointsDistributionChart — donut showing how earned points split across HIGH / MEDIUM / LOW priority tasks.
+ * Dynamically adapts tooltip, text, and legend contrast for Light and Dark themes.
  */
 export function PointsDistributionChart({
   data,
@@ -30,6 +24,9 @@ export function PointsDistributionChart({
   data: { high: number; medium: number; low: number };
   height?: number;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const rows = [
     { key: 'HIGH', label: 'High priority', value: data.high, color: PALETTE.high },
     { key: 'MED', label: 'Medium priority', value: data.medium, color: PALETTE.medium },
@@ -40,7 +37,7 @@ export function PointsDistributionChart({
   if (total === 0) {
     return (
       <div
-        className="grid place-items-center text-sm text-gray-400 italic"
+        className="grid place-items-center text-sm text-slate-500 dark:text-gray-400 italic"
         style={{ height }}
       >
         Complete a task to see your points breakdown.
@@ -51,8 +48,8 @@ export function PointsDistributionChart({
   return (
     <div className="w-full">
       <div className="flex items-baseline gap-4 mb-2">
-        <div className="text-2xl font-extrabold tabular-nums">{total}</div>
-        <div className="text-xs text-gray-400">total points earned</div>
+        <div className="text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums">{total}</div>
+        <div className="text-xs text-slate-500 dark:text-gray-400">total points earned</div>
       </div>
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
@@ -71,7 +68,7 @@ export function PointsDistributionChart({
               ))}
             </Pie>
             <Tooltip
-              cursor={{ fill: 'rgba(255,255,255,0.06)' }}
+              cursor={{ fill: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)' }}
               content={({ active, payload }) => {
                 if (!active || !payload || payload.length === 0) return null;
                 const p = payload[0];
@@ -85,12 +82,13 @@ export function PointsDistributionChart({
                 return (
                   <div
                     style={{
-                      background: 'rgba(15, 7, 30, 0.96)',
-                      border: '1px solid rgba(255,255,255,0.18)',
+                      background: isDark ? 'rgba(22, 31, 48, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+                      border: isDark ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(226, 232, 240, 0.9)',
                       borderRadius: 8,
-                      padding: '8px 10px',
+                      padding: '8px 12px',
                       fontSize: 12,
-                      boxShadow: '0 6px 20px rgba(0,0,0,0.45)',
+                      boxShadow: isDark ? '0 10px 25px rgba(0,0,0,0.5)' : '0 10px 25px rgba(0,0,0,0.1)',
+                      color: isDark ? '#F9FAFB' : '#0F172A',
                     }}
                   >
                     <div
@@ -98,7 +96,6 @@ export function PointsDistributionChart({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
-                        color: '#f3f4f6',
                         fontWeight: 600,
                       }}
                     >
@@ -115,7 +112,6 @@ export function PointsDistributionChart({
                     </div>
                     <div
                       style={{
-                        color: '#ffffff',
                         fontWeight: 700,
                         marginTop: 4,
                         fontVariantNumeric: 'tabular-nums',
@@ -130,8 +126,8 @@ export function PointsDistributionChart({
           </PieChart>
         </ResponsiveContainer>
       </div>
-      {/* Custom legend — keeps the chart inside the card. */}
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2 text-xs text-gray-300">
+      {/* Custom legend */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-700 dark:text-gray-300">
         {rows.map((r) => (
           <span key={r.key} className="inline-flex items-center gap-2">
             <span
@@ -139,7 +135,7 @@ export function PointsDistributionChart({
               style={{ width: 9, height: 9, background: r.color }}
             />
             {r.label}
-            <span className="text-gray-500 tabular-nums">{r.value}</span>
+            <span className="text-slate-500 dark:text-gray-500 tabular-nums">{r.value}</span>
           </span>
         ))}
       </div>

@@ -101,9 +101,8 @@ export function LifePathPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
-                    className={`flex flex-col sm:flex-row items-center gap-6 ${
-                      isLeft ? 'sm:flex-row-reverse' : ''
-                    }`}
+                    className={`flex flex-col sm:flex-row items-center gap-6 ${isLeft ? 'sm:flex-row-reverse' : ''
+                      }`}
                   >
                     {/* Content Card */}
                     <div className="w-full sm:w-[calc(50%-2rem)] pl-12 sm:pl-0">
@@ -113,13 +112,12 @@ export function LifePathPage() {
                             Target #{index + 1}
                           </span>
                           <span
-                            className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                              target.priority === 'HIGH'
-                                ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
-                                : target.priority === 'MEDIUM'
+                            className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${target.priority === 'HIGH'
+                              ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                              : target.priority === 'MEDIUM'
                                 ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
                                 : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                            }`}
+                              }`}
                           >
                             {target.priority}
                           </span>
@@ -158,11 +156,10 @@ export function LifePathPage() {
                     {/* Timeline Node Badge */}
                     <div className="absolute left-6 sm:left-1/2 -translate-x-1/2 z-10 flex items-center justify-center">
                       <div
-                        className={`w-10 h-10 rounded-full border-4 flex items-center justify-center shadow-lg transition-all ${
-                          isDone
-                            ? 'bg-emerald-500 border-white dark:border-[#110b24] text-white shadow-emerald-500/50'
-                            : 'bg-purple-600 border-white dark:border-[#110b24] text-white shadow-purple-500/50 animate-pulse'
-                        }`}
+                        className={`w-10 h-10 rounded-full border-4 flex items-center justify-center shadow-lg transition-all ${isDone
+                          ? 'bg-emerald-500 border-white dark:border-[#110b24] text-white shadow-emerald-500/50'
+                          : 'bg-purple-600 border-white dark:border-[#110b24] text-white shadow-purple-500/50 animate-pulse'
+                          }`}
                       >
                         {isDone ? <CheckCircle2 size={18} /> : <TargetIcon size={18} />}
                       </div>
@@ -190,7 +187,7 @@ export function LifePathPage() {
               </div>
 
               <div className="rounded-2xl border-2 border-fuchsia-500/40 bg-gradient-to-br from-purple-900/40 via-indigo-900/30 to-fuchsia-900/40 backdrop-blur-xl p-6 sm:p-8 shadow-2xl text-center mt-6">
-                <span className="text-xs uppercase tracking-widest font-black text-fuchsia-400 bg-fuchsia-500/20 px-3 py-1 rounded-full border border-fuchsia-500/30 inline-block mb-3">
+                <span className="text-xs uppercase tracking-widest font-black text-violet-500 bg-fuchsia-500/20 px-3 py-1 rounded-full border border-fuchsia-500/30 inline-block mb-3">
                   Ultimate Milestone
                 </span>
 
@@ -198,7 +195,7 @@ export function LifePathPage() {
                   <div>
                     {hasFutureGoal && futureGoal ? (
                       <>
-                        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                        <h2 className="text-2xl sm:text-3xl font-black text-white-600 tracking-tight">
                           {futureGoal.title}
                         </h2>
                         <button

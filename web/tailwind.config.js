@@ -8,15 +8,38 @@ export default {
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],
       },
       colors: {
-        darkBg: '#08060d',
-        cardBg: '#13101e',
-        cardBorder: '#231d36',
+        // Dark theme obsidian tokens
+        obsidian: {
+          bg: '#0B0F19',
+          surface: '#111827',
+          card: '#161F30',
+          border: '#1F293D',
+          textPrimary: '#F9FAFB',
+          textSecondary: '#9CA3AF',
+          textMuted: '#6B7280',
+        },
+        // Light theme slate tokens
+        slateTheme: {
+          bg: '#F8FAFC',
+          surface: '#F1F5F9',
+          card: '#FFFFFF',
+          border: '#E2E8F0',
+          textPrimary: '#0F172A',
+          textSecondary: '#475569',
+          textMuted: '#64748B',
+        },
+        // Legacy support
+        darkBg: '#0B0F19',
+        cardBg: '#161F30',
+        cardBorder: '#1F293D',
         neonLime: '#ccff00',
       },
       boxShadow: {
-        'glow-purple': '0 0 30px -5px rgba(168, 85, 247, 0.35)',
+        'glow-indigo': '0 0 25px -5px rgba(99, 102, 241, 0.45)',
+        'glow-purple': '0 0 30px -5px rgba(168, 85, 247, 0.40)',
+        'glow-pink': '0 0 25px -5px rgba(236, 72, 153, 0.35)',
         'glow-orange': '0 0 30px -5px rgba(249, 115, 22, 0.35)',
-        'glow-lime': '0 0 25px 0px rgba(204, 255, 0, 0.35)',
+        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.40)',
       },
       keyframes: {
         floatSlow: {

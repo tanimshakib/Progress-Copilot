@@ -2,112 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ───────────────────── Theme tokens ─────────────────────
- * Light mode uses Canva-inspired soft violet/indigo/sky-blue
- * gradients, white cards with subtle glowing shadows, and slate-900 text.
- * Dark mode uses deep dark slate/purple gradients (#110b24).
+/* ───────────────────── Theme Custom Variables ─────────────────────
+ * High-Contrast WCAG AA Compliant Theme Palette for Progress Copilot
+ * Light Theme: Soft slate white (#F8FAFC), elevated surfaces (#F1F5F9), deep slate text (#0F172A).
+ * Dark Theme: Deep obsidian (#0B0F19), dark surface (#111827), card (#161F30), crisp off-white text (#F9FAFB).
  */
 
 :root {
-  --bg: #eef2ff;
-  --card: #ffffff;
-  --line: rgba(124, 58, 237, 0.15);
-  --purple: #8b5cf6;
-  --orange: #f97316;
-  --lime: #84cc16;
-  --text: #0f172a;
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #F1F5F9;
+  --card-bg: #FFFFFF;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --border-main: #E2E8F0;
+  --ambient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08), transparent 70%);
 }
 
 html.dark {
-  --bg: #110b24;
-  --card: #181132;
-  --line: rgba(255, 255, 255, 0.1);
-  --text: #ffffff;
+  --bg-primary: #0B0F19;
+  --bg-secondary: #111827;
+  --card-bg: #161F30;
+  --text-primary: #F9FAFB;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --border-main: #1F293D;
+  --ambient-glow: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.18), transparent 70%);
 }
 
-html, body, #root { height: 100%; }
+html, body, #root { 
+  height: 100%; 
+}
 
 body {
   margin: 0;
-  background-color: #eef2ff;
+  background-color: var(--bg-primary);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(199, 210, 254, 0.75) 0px, transparent 55%),
-    radial-gradient(at 100% 0%, rgba(221, 214, 254, 0.75) 0px, transparent 55%),
-    radial-gradient(at 50% 100%, rgba(224, 231, 255, 0.85) 0px, transparent 60%);
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 55%),
+    radial-gradient(at 100% 0%, rgba(168, 85, 247, 0.12) 0px, transparent 55%),
+    radial-gradient(at 50% 100%, rgba(56, 189, 248, 0.1) 0px, transparent 60%);
   background-attachment: fixed;
-  color: var(--text);
+  color: var(--text-primary);
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
-  transition: background-color 300ms ease, color 300ms ease;
+  transition: background-color 300ms ease-in-out, color 300ms ease-in-out, border-color 300ms ease-in-out;
 }
 
 html.dark body {
-  background-color: #110b24;
+  background-color: #0B0F19;
   background-image: 
-    radial-gradient(at 10% 10%, rgba(45, 27, 85, 0.6) 0px, transparent 60%),
-    radial-gradient(at 90% 20%, rgba(35, 18, 70, 0.6) 0px, transparent 60%),
-    radial-gradient(at 50% 90%, rgba(18, 30, 65, 0.5) 0px, transparent 60%);
+    radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.20) 0px, transparent 60%),
+    radial-gradient(at 100% 0%, rgba(79, 70, 229, 0.20) 0px, transparent 60%),
+    radial-gradient(at 50% 90%, rgba(14, 165, 233, 0.12) 0px, transparent 60%);
 }
 
-::selection { background: rgba(168, 85, 247, 0.6); color: white; }
+::selection { 
+  background: rgba(168, 85, 247, 0.6); 
+  color: #ffffff; 
+}
 
 select,
 select option,
 select optgroup {
-  background-color: var(--card);
-  color: var(--text);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
 }
+
 html.dark select,
 html.dark select option,
 html.dark select optgroup {
-  background-color: #1b1530;
-  color: #ffffff;
+  background-color: #161F30;
+  color: #F9FAFB;
 }
+
 html.dark select option:checked {
-  background-color: #2a1f4a linear-gradient(0deg, #2a1f4a 0%, #2a1f4a 100%);
-  color: #ffffff;
+  background-color: #212B42;
+  color: #FFFFFF;
 }
 
 /* Light & Dark Form Elements Contrast */
 input, textarea, select {
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 html:not(.dark) input,
 html:not(.dark) textarea,
 html:not(.dark) select {
-  color: #0f172a !important;
+  color: #0F172A !important;
   background-color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(148, 163, 184, 0.4);
+  border-color: #CBD5E1;
 }
 
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {
-  color: #64748b !important;
+  color: #64748B !important;
 }
 
 html.dark input,
 html.dark textarea,
 html.dark select {
-  color: #ffffff;
+  color: #F9FAFB;
+  background-color: rgba(22, 31, 48, 0.75);
+  border-color: #1F293D;
+}
+
+/* ───────────────────── Utility Gradient & Glass Classes ───────────────────── */
+
+.gradient-text-hero {
+  background: linear-gradient(135deg, #6366F1 0%, #A855F7 50%, #EC4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-btn-primary {
+  background: linear-gradient(135deg, #7C3AED 0%, #4F46E5 100%);
+  box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.45);
+  transition: all 250ms ease-in-out;
+}
+.gradient-btn-primary:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px -1px rgba(99, 102, 241, 0.6);
 }
 
 .glass-nav {
   background: rgba(248, 250, 252, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(124, 58, 237, 0.15);
-  color: #0f172a;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: #0F172A;
 }
+
 html.dark .glass-nav {
-  background: rgba(19, 13, 38, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(31, 41, 61, 0.8);
+  color: #F9FAFB;
 }
 
 .dark-card {
-  background: linear-gradient(145deg, #181132 0%, #100a24 100%);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: linear-gradient(145deg, #161F30 0%, #0F172A 100%);
+  border: 1px solid rgba(31, 41, 61, 0.8);
   transition: all 0.3s ease;
 }
 .dark-card:hover {
@@ -116,9 +152,9 @@ html.dark .glass-nav {
 }
 
 .resource-card {
-  background: linear-gradient(180deg, rgba(22, 15, 42, 0.95), rgba(12, 8, 24, 0.98));
+  background: linear-gradient(180deg, rgba(22, 31, 48, 0.95), rgba(11, 15, 25, 0.98));
   border: 1px solid rgba(168, 85, 247, 0.25);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 40px rgba(10, 8, 20, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 20px 40px rgba(11, 15, 25, 0.45);
 }
 
 @keyframes badgeFloat {

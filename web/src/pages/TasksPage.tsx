@@ -220,13 +220,13 @@ function TaskColumn({
 }) {
   const accentCls =
     accent === 'amber'
-      ? 'from-amber-500/15 to-transparent ring-amber-400/30'
-      : 'from-emerald-500/15 to-transparent ring-emerald-400/30';
-  const dotCls = accent === 'amber' ? 'bg-amber-400' : 'bg-emerald-400';
+      ? 'from-amber-500/15 to-amber-500/5 ring-amber-400/30'
+      : 'from-emerald-500/15 to-emerald-500/5 ring-emerald-400/30';
+  const dotCls = accent === 'amber' ? 'bg-amber-500' : 'bg-emerald-500';
   const badgeCls =
     accent === 'amber'
-      ? 'bg-amber-500/15 text-amber-300 ring-amber-400/30'
-      : 'bg-emerald-500/15 text-emerald-300 ring-emerald-400/30';
+      ? 'bg-amber-500/20 text-amber-900 dark:text-amber-300 ring-amber-400/40 font-black'
+      : 'bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 ring-emerald-400/40 font-black';
 
   const childArray = Array.isArray(children) ? children : [children];
   const hasChildren = childArray.filter(Boolean).length > 0;
@@ -234,19 +234,19 @@ function TaskColumn({
   return (
     <section
       className={
-        'rounded-2xl border border-white/10 bg-gradient-to-br ' +
+        'rounded-2xl border border-purple-200/80 dark:border-white/10 bg-gradient-to-br ' +
         accentCls +
-        ' backdrop-blur-xl p-4 sm:p-5 shadow-xl shadow-black/30 ring-1'
+        ' backdrop-blur-xl p-4 sm:p-5 shadow-md dark:shadow-xl ring-1'
       }
     >
       <header className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className={'h-2 w-2 rounded-full ' + dotCls} />
-          <h3 className="text-base font-bold text-white">{title}</h3>
+          <h3 className="text-base font-extrabold text-slate-900 dark:text-white">{title}</h3>
         </div>
         <span
           className={
-            'inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-[11px] font-bold ring-1 ' +
+            'inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-[11px] ring-1 ' +
             badgeCls
           }
         >
@@ -288,12 +288,12 @@ function TaskCard({
   return (
     <li
       className={
-        'group rounded-xl p-3 transition-all ring-1 ' +
+        'group rounded-xl p-3 transition-all ring-1 border ' +
         (isDone
-          ? 'bg-emerald-500/5 ring-emerald-500/20'
+          ? 'bg-emerald-500/10 dark:bg-emerald-500/5 ring-emerald-500/30 border-emerald-500/20'
           : overdue
-          ? 'bg-rose-500/5 ring-rose-500/30'
-          : 'bg-white/[0.04] ring-white/10 hover:ring-purple-400/30')
+          ? 'bg-rose-500/10 dark:bg-rose-500/5 ring-rose-500/30 border-rose-500/20'
+          : 'bg-white/80 dark:bg-white/[0.04] ring-slate-200/80 dark:ring-white/10 border-slate-200/90 dark:border-white/10 hover:border-purple-400/50 shadow-sm')
       }
     >
       <div className="flex items-start gap-3">
@@ -304,8 +304,8 @@ function TaskCard({
           className={
             'mt-0.5 h-6 w-6 shrink-0 rounded-md border-2 flex items-center justify-center transition-all ' +
             (isDone
-              ? 'bg-emerald-500 border-emerald-400 text-white'
-              : 'border-white/30 hover:border-purple-400 hover:bg-purple-500/10')
+              ? 'bg-emerald-500 border-emerald-400 text-white shadow-sm'
+              : 'border-slate-400 dark:border-white/30 bg-white/50 dark:bg-transparent hover:border-purple-500 hover:bg-purple-500/10')
           }
         >
           {isDone && <CheckIcon />}
@@ -315,8 +315,8 @@ function TaskCard({
           <div className="flex items-start justify-between gap-2">
             <p
               className={
-                'text-sm font-semibold ' +
-                (isDone ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white')
+                'text-sm font-bold ' +
+                (isDone ? 'line-through text-slate-500 dark:text-gray-500' : 'text-slate-900 dark:text-white')
               }
             >
               {task.title}
@@ -327,7 +327,7 @@ function TaskCard({
                   type="button"
                   onClick={() => onOpenTarget(task.target!.id)}
                   title={`Open "${task.target!.title}" progress`}
-                  className="inline-flex items-center gap-1 h-6 max-w-[140px] px-2 rounded-full text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500/15 text-fuchsia-200 ring-1 ring-fuchsia-400/30 hover:bg-fuchsia-500/25 hover:ring-fuchsia-400/60 transition-all"
+                  className="inline-flex items-center gap-1 h-6 max-w-[140px] px-2 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-fuchsia-500/15 text-fuchsia-900 dark:text-fuchsia-200 ring-1 ring-fuchsia-400/40 hover:bg-fuchsia-500/25 transition-all shadow-xs"
                 >
                   <TargetIcon />
                   <span className="truncate">{task.target!.title}</span>
@@ -337,7 +337,7 @@ function TaskCard({
                 type="button"
                 onClick={onDelete}
                 aria-label="Delete task"
-                className="opacity-0 group-hover:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                className="opacity-0 group-hover:opacity-100 h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all"
               >
                 <TrashIcon />
               </button>
@@ -348,7 +348,7 @@ function TaskCard({
             <p
               className={
                 'mt-1 text-xs ' +
-                (isDone ? 'text-gray-500 line-through' : 'text-gray-600 dark:text-gray-400')
+                (isDone ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-gray-300 font-medium')
               }
             >
               {task.description}
@@ -360,10 +360,10 @@ function TaskCard({
             {effectiveDeadline && (
               <span
                 className={
-                  'inline-flex items-center gap-1 h-5 px-2 rounded-full ring-1 ' +
+                  'inline-flex items-center gap-1 h-5 px-2 rounded-full ring-1 font-semibold ' +
                   (overdue
-                    ? 'bg-rose-500/15 text-rose-300 ring-rose-400/30'
-                    : 'bg-white/5 text-gray-300 ring-white/10')
+                    ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300 ring-rose-400/30'
+                    : 'bg-slate-200/70 dark:bg-white/5 text-slate-700 dark:text-gray-300 ring-slate-300 dark:ring-white/10')
                 }
                 title={
                   !task.deadline && hasParentTarget
@@ -377,7 +377,7 @@ function TaskCard({
                 {!task.deadline && hasParentTarget && ' · from target'}
               </span>
             )}
-            <span className="inline-flex items-center h-5 px-2 rounded-full bg-purple-500/10 text-purple-200 ring-1 ring-purple-400/20">
+            <span className="inline-flex items-center h-5 px-2 rounded-full bg-purple-500/15 text-purple-900 dark:text-purple-200 ring-1 ring-purple-400/30 font-extrabold">
               +{pointsLabel(task.priority, task.targetId)} pts
             </span>
           </div>
