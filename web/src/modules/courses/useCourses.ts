@@ -24,6 +24,21 @@ export function useCourses() {
     },
   });
 
+  const toggleCourseMutation = useMutation({
+    mutationFn: ({ id, isCompleted }: { id: string; isCompleted?: boolean }) =>
+      coursesApi.toggleComplete(id, isCompleted),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+
+  const completeSemesterMutation = useMutation({
+    mutationFn: (semester: string) => coursesApi.completeSemester(semester),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: coursesApi.delete,
     onSuccess: () => {
@@ -37,7 +52,9 @@ export function useCourses() {
     error: query.error ? (query.error as Error).message : null,
     createCourse: createMutation.mutateAsync,
     updateCourse: updateMutation.mutateAsync,
+    toggleCourse: toggleCourseMutation.mutateAsync,
+    completeSemester: completeSemesterMutation.mutateAsync,
     deleteCourse: deleteMutation.mutateAsync,
-    saving: createMutation.isPending || updateMutation.isPending,
+    saving: createMutation.isPending || updateMutation.isPending || toggleCourseMutation.isPending,
   };
 }

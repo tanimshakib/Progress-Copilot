@@ -20,6 +20,8 @@ import type { Priority, Task } from '../lib/types';
  *   message survives the AddTaskForm unmounting on success.
  */
 
+import { FocusTimerCard } from '../components/gamification/FocusTimerCard';
+
 export function TasksPage() {
   const { refresh } = useAuth();
   const { tasks, loading, error, reload, toggle, remove, create } = useTasks();
@@ -156,6 +158,11 @@ export function TasksPage() {
           </button>
         </div>
       )}
+
+      {/* ─── Focus Timer Widget ─── */}
+      <div className="max-w-xl mx-auto mb-2">
+        <FocusTimerCard />
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

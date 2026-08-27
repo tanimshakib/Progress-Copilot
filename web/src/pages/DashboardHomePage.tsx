@@ -38,6 +38,8 @@ function GithubIcon({ size = 20, className = '' }: { size?: number; className?: 
   );
 }
 
+import { FocusTimerCard } from '../components/gamification/FocusTimerCard';
+
 export function DashboardHomePage() {
   const { user, refresh } = useAuth();
   const { data, loading, error, reload } = useDashboard();
@@ -159,120 +161,117 @@ export function DashboardHomePage() {
         </div>
       </div>
 
-      {/* ─── Top targets + Recent tasks ─────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DashboardCard
-          title="Active Targets"
-          subtitle="Key milestones & sub-task progress."
-          action={
-            <Link
-              to="/dashboard/targets"
-              className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
-            >
-              View all →
-            </Link>
-          }
-        >
-          <TargetProgressBars
-            targets={topTargets}
-            emptyMessage="No active targets. Create one to start tracking."
-          />
-        </DashboardCard>
+      {/* ─── Gamification Focus Timer & Active Targets ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <FocusTimerCard />
+        </div>
+        <div className="lg:col-span-2">
+          <DashboardCard
+            title="Active Targets"
+            subtitle="Key milestones & sub-task progress."
+            action={
+              <Link
+                to="/dashboard/targets"
+                className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
+              >
+                View all →
+              </Link>
+            }
+          >
+            <TargetProgressBars
+              targets={topTargets}
+              emptyMessage="No active targets. Create one to start tracking."
+            />
+          </DashboardCard>
+        </div>
+      </div>
 
-        <DashboardCard
-          title="Recent Tasks"
-          subtitle="Recent standalone and target sub-tasks."
-          action={
-            <Link
-              to="/dashboard/tasks"
-              className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
-            >
-              View all tasks →
-            </Link>
-          }
-        >
-          {pendingTasks.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-violet-300/70 italic py-4">
-              No tasks found. Create a task in the Tasks section!
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {pendingTasks.map((t: Task) => {
-                const strikethrough = strikeOverrides[t.id] ?? t.isCompleted;
-                const busy = pendingToggles.has(t.id);
-                return (
-                  <li
-                    key={t.id}
-                    className={`flex items-center justify-between gap-3 rounded-xl p-2.5 border transition ${
-                      strikethrough
-                        ? 'bg-slate-100/50 dark:bg-white/[0.01] border-slate-200 dark:border-white/5 opacity-70'
-                        : 'bg-slate-50/80 dark:bg-white/[0.02] border-purple-200/50 dark:border-white/5 hover:border-purple-400/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <button
-                        type="button"
-                        onClick={() => handleToggle(t)}
-                        disabled={busy}
-                        aria-label={strikethrough ? 'Mark as not done' : 'Mark as done'}
-                        className={
-                          'h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-all cursor-pointer ' +
-                          (strikethrough
-                            ? 'bg-emerald-500 border-emerald-400'
-                            : 'border-slate-400 dark:border-white/30 hover:border-emerald-400') +
-                          (busy ? ' opacity-50' : '')
-                        }
-                      >
-                        {strikethrough && (
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={3}
-                            className="h-3 w-3 text-white"
-                          >
-                            <path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        )}
-                      </button>
-                      <div className="min-w-0">
-                        <span
-                          className={
-                            'truncate text-sm font-medium block ' +
-                            (strikethrough
-                              ? 'line-through text-slate-400 dark:text-violet-400/50'
-                              : 'text-slate-900 dark:text-white')
-                          }
+      {/* ─── Recent Tasks ─── */}
+      <DashboardCard
+        title="Recent Tasks"
+        subtitle="Recent standalone and target sub-tasks."
+        action={
+          <Link
+            to="/dashboard/tasks"
+            className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
+          >
+            View all tasks →
+          </Link>
+        }
+      >
+        {pendingTasks.length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-violet-300/70 italic py-4">
+            No tasks found. Create a task in the Tasks section!
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {pendingTasks.map((t: Task) => {
+              const strikethrough = strikeOverrides[t.id] ?? t.isCompleted;
+              const busy = pendingToggles.has(t.id);
+              return (
+                <li
+                  key={t.id}
+                  className={`flex items-center justify-between gap-3 rounded-xl p-2.5 border transition ${
+                    strikethrough
+                      ? 'bg-slate-100/50 dark:bg-white/[0.01] border-slate-200 dark:border-white/5 opacity-70'
+                      : 'bg-slate-50/80 dark:bg-white/[0.02] border-purple-200/50 dark:border-white/5 hover:border-purple-400/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggle(t)}
+                      disabled={busy}
+                      aria-label={strikethrough ? 'Mark as not done' : 'Mark as done'}
+                      className={
+                        'h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-all cursor-pointer ' +
+                        (strikethrough
+                          ? 'bg-emerald-500 border-emerald-400'
+                          : 'border-slate-400 dark:border-white/30 hover:border-emerald-400') +
+                        (busy ? ' opacity-50' : '')
+                      }
+                    >
+                      {strikethrough && (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          className="w-3 h-3 text-white"
                         >
-                          {t.title}
-                        </span>
-                        {t.target && (
-                          <span className="text-[10px] font-bold text-purple-600 dark:text-fuchsia-400 truncate block">
-                            Target: {t.target.title}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
                     <span
-                      className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
+                      className={`text-sm font-semibold truncate ${
                         strikethrough
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                          ? 'line-through text-slate-400 dark:text-violet-300/40'
+                          : 'text-slate-900 dark:text-white'
                       }`}
                     >
-                      {strikethrough ? 'Completed' : 'Pending'}
+                      {t.title}
                     </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {toggleError && (
-            <p className="text-xs text-rose-500 mt-2">{toggleError}</p>
-          )}
-        </DashboardCard>
-      </div>
+                  </div>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
+                      strikethrough
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    {strikethrough ? 'Completed' : 'Pending'}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {toggleError && (
+          <p className="text-xs text-rose-500 mt-2">{toggleError}</p>
+        )}
+      </DashboardCard>
 
       {/* ─── Reminders + GitHub Projects strip ─────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

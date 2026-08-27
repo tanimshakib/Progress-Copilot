@@ -41,7 +41,7 @@ export type FocusTimerContextType = {
 const FocusTimerContext = createContext<FocusTimerContextType | undefined>(undefined);
 
 export function FocusTimerProvider({ children }: { children: ReactNode }) {
-  const { user, refresh } = useAuth();
+  const { refresh } = useAuth();
   const { addToast } = useToast();
 
   const [mode, setModeState] = useState<TimerMode>('work');
