@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Play,
   Pause,
@@ -9,6 +11,8 @@ import {
   Coffee,
   Brain,
   Zap,
+  Settings2,
+  RotateCw,
 } from 'lucide-react';
 import { useFocusTimer, type TimerMode } from '../../context/FocusTimerContext';
 
@@ -18,16 +22,21 @@ export function FocusTimerCard() {
     isRunning,
     formattedTime,
     progress,
+    durationsInMinutes,
     totalSessionsCompleted,
     isMuted,
     start,
     pause,
     stop,
     setMode,
+    setCustomDurationInMinutes,
+    resetAllDurationsToDefault,
     toggleMute,
     skip,
     fastForwardSession,
   } = useFocusTimer();
+
+  const [showSettings, setShowSettings] = useState(false);
 
   const strokeDashoffset = 440 - (440 * progress) / 100;
 
@@ -71,10 +80,16 @@ export function FocusTimerCard() {
   const currentTheme = modeThemes[mode];
   const Icon = currentTheme.icon;
 
+  const applyPreset = (workMins: number, breakMins: number, restMins: number) => {
+    setCustomDurationInMinutes('work', workMins);
+    setCustomDurationInMinutes('shortBreak', breakMins);
+    setCustomDurationInMinutes('longBreak', restMins);
+  };
+
   return (
     <div className="relative overflow-hidden rounded-3xl border border-purple-200/80 dark:border-cardBorder bg-gradient-to-br from-slate-50/95 via-indigo-50/70 to-purple-50/60 dark:from-[#160e2e]/90 dark:to-[#0c071a]/95 p-6 shadow-xl dark:shadow-glow-purple">
       {/* Top Header */}
-      <div className="flex items-center justify-between gap-3 mb-5">
+      <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5">
           <div
             className={`w-9 h-9 rounded-xl flex items-center justify-center text-white bg-gradient-to-r ${currentTheme.gradient} shadow-md`}
@@ -86,20 +101,142 @@ export function FocusTimerCard() {
               {currentTheme.title}
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-violet-300/70">
-              {mode === 'work' ? 'Earn +2 points per 25-minute focus session' : 'Rest your eyes & refresh'}
+              {mode === 'work'
+                ? `Earn +2 points per ${durationsInMinutes.work}-min focus session`
+                : 'Rest your eyes & refresh'}
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={toggleMute}
-          title={isMuted ? 'Unmute chimes' : 'Mute chimes'}
-          className="p-2 rounded-xl text-slate-500 dark:text-violet-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-500/10 transition"
-        >
-          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowSettings((prev) => !prev)}
+            title="Custom Timer Durations"
+            className={`p-2 rounded-xl transition ${
+              showSettings
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-slate-500 dark:text-violet-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-500/10'
+            }`}
+          >
+            <Settings2 size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleMute}
+            title={isMuted ? 'Unmute chimes' : 'Mute chimes'}
+            className="p-2 rounded-xl text-slate-500 dark:text-violet-300 hover:text-purple-600 dark:hover:text-white hover:bg-purple-500/10 transition"
+          >
+            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+        </div>
       </div>
+
+      {/* Custom Duration Settings Drawer */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden mb-5 rounded-2xl bg-white/90 dark:bg-[#100922] border border-purple-200/80 dark:border-cardBorder p-4 shadow-lg"
+          >
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-purple-200/60 dark:border-cardBorder/40">
+              <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Settings2 size={14} className="text-purple-500" /> Custom Timer Durations
+              </span>
+              <button
+                type="button"
+                onClick={resetAllDurationsToDefault}
+                className="text-[10px] font-bold text-slate-500 dark:text-violet-300/70 hover:text-purple-600 dark:hover:text-white flex items-center gap-1 hover:underline"
+              >
+                <RotateCw size={11} /> Reset Defaults
+              </button>
+            </div>
+
+            {/* Duration inputs */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              <div>
+                <label className="block text-[10px] font-extrabold text-purple-700 dark:text-fuchsia-300 mb-1">
+                  Focus (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="180"
+                  value={durationsInMinutes.work}
+                  onChange={(e) =>
+                    setCustomDurationInMinutes('work', parseInt(e.target.value) || 25)
+                  }
+                  className="w-full text-center py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-purple-200 dark:border-cardBorder text-slate-900 dark:text-white font-extrabold text-xs focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 mb-1">
+                  Break (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  value={durationsInMinutes.shortBreak}
+                  onChange={(e) =>
+                    setCustomDurationInMinutes('shortBreak', parseInt(e.target.value) || 5)
+                  }
+                  className="w-full text-center py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-purple-200 dark:border-cardBorder text-slate-900 dark:text-white font-extrabold text-xs focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold text-sky-700 dark:text-sky-300 mb-1">
+                  Rest (min)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="90"
+                  value={durationsInMinutes.longBreak}
+                  onChange={(e) =>
+                    setCustomDurationInMinutes('longBreak', parseInt(e.target.value) || 15)
+                  }
+                  className="w-full text-center py-1.5 px-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-purple-200 dark:border-cardBorder text-slate-900 dark:text-white font-extrabold text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center justify-between gap-1 pt-2 border-t border-purple-200/50 dark:border-cardBorder/40">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-violet-300/60">Presets:</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => applyPreset(25, 5, 15)}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-fuchsia-300 hover:bg-purple-500/20 transition border border-purple-500/20"
+                >
+                  25/5/15m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(50, 10, 20)}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-fuchsia-300 hover:bg-purple-500/20 transition border border-purple-500/20"
+                >
+                  50/10/20m
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(15, 3, 10)}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-purple-500/10 text-purple-700 dark:text-fuchsia-300 hover:bg-purple-500/20 transition border border-purple-500/20"
+                >
+                  15/3/10m
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mode Selector Tabs */}
       <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-200/70 dark:bg-[#0c0819] border border-purple-200/60 dark:border-cardBorder/40 mb-6">
@@ -114,7 +251,11 @@ export function FocusTimerCard() {
                 : 'text-slate-600 dark:text-violet-300/70 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            {m === 'work' ? 'Focus (25m)' : m === 'shortBreak' ? 'Break (5m)' : 'Rest (15m)'}
+            {m === 'work'
+              ? `Focus (${durationsInMinutes.work}m)`
+              : m === 'shortBreak'
+              ? `Break (${durationsInMinutes.shortBreak}m)`
+              : `Rest (${durationsInMinutes.longBreak}m)`}
           </button>
         ))}
       </div>

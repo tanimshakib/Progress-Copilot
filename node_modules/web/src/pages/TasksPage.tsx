@@ -20,6 +20,7 @@ import type { Priority, Task } from '../lib/types';
  *   message survives the AddTaskForm unmounting on success.
  */
 
+import { Timer, ListTodo } from 'lucide-react';
 import { FocusTimerCard } from '../components/gamification/FocusTimerCard';
 
 export function TasksPage() {
@@ -27,6 +28,7 @@ export function TasksPage() {
   const { tasks, loading, error, reload, toggle, remove, create } = useTasks();
   const navigate = useNavigate();
 
+  const [activeView, setActiveView] = useState<'tasks' | 'timer'>('tasks');
   const [showAdd, setShowAdd] = useState(false);
   const [filterPriority, setFilterPriority] = useState<'ALL' | Priority>('ALL');
   // Page-level banner for create errors so the message survives the
@@ -73,31 +75,51 @@ export function TasksPage() {
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-            Standalone Tasks
+            {activeView === 'timer' ? 'Focus Timer' : 'Standalone Tasks'}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Quick wins that don't belong to a Target — each one earns +2 pts.
+            {activeView === 'timer'
+              ? 'Stay in the flow, track 25m Pomodoro sessions, and earn +2 points per session.'
+              : "Quick wins that don't belong to a Target — each one earns +2 pts."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={filterPriority}
-            onChange={(e) => setFilterPriority(e.target.value as 'ALL' | Priority)}
-            className="h-10 px-3 rounded-lg bg-slate-100/90 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-          >
-            <option value="ALL">All priorities</option>
-            <option value="HIGH">HIGH</option>
-            <option value="MEDIUM">MEDIUM</option>
-            <option value="LOW">LOW</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Focus Timer View Toggle Button */}
           <button
             type="button"
-            onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-900/30 hover:shadow-xl hover:brightness-110 transition-all"
+            onClick={() => setActiveView((v) => (v === 'tasks' ? 'timer' : 'tasks'))}
+            className={`inline-flex items-center gap-2 h-10 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all border shadow-sm ${
+              activeView === 'timer'
+                ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white border-purple-400 shadow-purple-500/25 ring-2 ring-purple-400/30'
+                : 'bg-purple-500/10 text-purple-700 dark:text-fuchsia-300 border-purple-500/20 hover:bg-purple-500/20'
+            }`}
           >
-            <PlusIcon />
-            {showAdd ? 'Close' : 'Add Task'}
+            {activeView === 'timer' ? <ListTodo size={16} /> : <Timer size={16} />}
+            {activeView === 'timer' ? 'Tasks View' : 'Focus Timer'}
           </button>
+
+          {activeView === 'tasks' && (
+            <>
+              <select
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(e.target.value as 'ALL' | Priority)}
+                className="h-10 px-3 rounded-lg bg-slate-100/90 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              >
+                <option value="ALL">All priorities</option>
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowAdd((v) => !v)}
+                className="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-gradient-to-r from-purple-600 to-fuchsia-500 text-white font-semibold shadow-lg shadow-purple-900/30 hover:shadow-xl hover:brightness-110 transition-all"
+              >
+                <PlusIcon />
+                {showAdd ? 'Close' : 'Add Task'}
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -159,12 +181,11 @@ export function TasksPage() {
         </div>
       )}
 
-      {/* ─── Focus Timer Widget ─── */}
-      <div className="max-w-xl mx-auto mb-2">
-        <FocusTimerCard />
-      </div>
-
-      {loading ? (
+      {activeView === 'timer' ? (
+        <div className="max-w-xl mx-auto py-4">
+          <FocusTimerCard />
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <SkeletonColumn />
           <SkeletonColumn />

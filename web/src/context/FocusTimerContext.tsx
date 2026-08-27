@@ -14,16 +14,37 @@ import { sounds } from '../lib/audio';
 
 export type TimerMode = 'work' | 'shortBreak' | 'longBreak';
 
-export const TIMER_DURATIONS: Record<TimerMode, number> = {
-  work: 25 * 60, // 25 minutes (1500s)
-  shortBreak: 5 * 60, // 5 minutes (300s)
-  longBreak: 15 * 60, // 15 minutes (900s)
+export const DEFAULT_DURATIONS_MINUTES: Record<TimerMode, number> = {
+  work: 25,
+  shortBreak: 5,
+  longBreak: 15,
 };
+
+const STORAGE_KEY = 'pc_focus_timer_durations';
+
+function getInitialDurations(): Record<TimerMode, number> {
+  if (typeof window === 'undefined') return DEFAULT_DURATIONS_MINUTES;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        work: Math.max(1, Math.min(180, Number(parsed.work) || 25)),
+        shortBreak: Math.max(1, Math.min(60, Number(parsed.shortBreak) || 5)),
+        longBreak: Math.max(1, Math.min(90, Number(parsed.longBreak) || 15)),
+      };
+    }
+  } catch {
+    /* fallback to default */
+  }
+  return DEFAULT_DURATIONS_MINUTES;
+}
 
 export type FocusTimerContextType = {
   mode: TimerMode;
   secondsLeft: number;
   totalDuration: number;
+  durationsInMinutes: Record<TimerMode, number>;
   isRunning: boolean;
   totalSessionsCompleted: number;
   isMuted: boolean;
@@ -33,6 +54,8 @@ export type FocusTimerContextType = {
   pause: () => void;
   stop: () => void; // Reset current timer
   setMode: (mode: TimerMode) => void;
+  setCustomDurationInMinutes: (mode: TimerMode, minutes: number) => void;
+  resetAllDurationsToDefault: () => void;
   toggleMute: () => void;
   skip: () => void;
   fastForwardSession: () => void; // Development convenience / instant finish
@@ -45,12 +68,29 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
   const { addToast } = useToast();
 
   const [mode, setModeState] = useState<TimerMode>('work');
-  const [secondsLeft, setSecondsLeft] = useState<number>(TIMER_DURATIONS.work);
+  const [durationsInMinutes, setDurationsInMinutes] = useState<Record<TimerMode, number>>(getInitialDurations);
+
+  const [modeSeconds, setModeSeconds] = useState<Record<TimerMode, number>>(() => {
+    const initialMins = getInitialDurations();
+    return {
+      work: initialMins.work * 60,
+      shortBreak: initialMins.shortBreak * 60,
+      longBreak: initialMins.longBreak * 60,
+    };
+  });
+
   const [isRunning, setIsRunning] = useState(false);
   const [totalSessionsCompleted, setTotalSessionsCompleted] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
 
-  const totalDuration = TIMER_DURATIONS[mode];
+  const durationsInSeconds: Record<TimerMode, number> = {
+    work: durationsInMinutes.work * 60,
+    shortBreak: durationsInMinutes.shortBreak * 60,
+    longBreak: durationsInMinutes.longBreak * 60,
+  };
+
+  const secondsLeft = modeSeconds[mode];
+  const totalDuration = durationsInSeconds[mode];
   const progress = Math.min(100, Math.max(0, ((totalDuration - secondsLeft) / totalDuration) * 100));
 
   // Refs for current callbacks to avoid timer stale closures
@@ -60,16 +100,26 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
   const modeRef = useRef(mode);
   modeRef.current = mode;
 
+  const durationsInSecondsRef = useRef(durationsInSeconds);
+  durationsInSecondsRef.current = durationsInSeconds;
+
   const handleSessionComplete = useCallback(async () => {
     setIsRunning(false);
 
-    if (modeRef.current === 'work') {
+    const currentM = modeRef.current;
+    const defaultM = durationsInSecondsRef.current[currentM];
+
+    setModeSeconds((prev) => ({
+      ...prev,
+      [currentM]: defaultM,
+    }));
+
+    if (currentM === 'work') {
       if (!isMutedRef.current) {
         sounds.playTimerCompleteChime();
       }
 
       try {
-        // Record completed focus session in backend & award +2 points
         const res = await gamificationApi.recordPomodoroSession();
         await refresh();
 
@@ -89,11 +139,8 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
         });
       }
 
-      // Auto switch to break mode
       setModeState('shortBreak');
-      setSecondsLeft(TIMER_DURATIONS.shortBreak);
     } else {
-      // Break finished
       if (!isMutedRef.current) {
         sounds.playTick();
       }
@@ -106,7 +153,6 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
       });
 
       setModeState('work');
-      setSecondsLeft(TIMER_DURATIONS.work);
     }
   }, [addToast, refresh]);
 
@@ -116,13 +162,21 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
 
     if (isRunning) {
       interval = setInterval(() => {
-        setSecondsLeft((prev) => {
-          if (prev <= 1) {
+        setModeSeconds((prev) => {
+          const currentM = modeRef.current;
+          const currentVal = prev[currentM];
+          if (currentVal <= 1) {
             clearInterval(interval);
             handleSessionComplete();
-            return 0;
+            return {
+              ...prev,
+              [currentM]: durationsInSecondsRef.current[currentM],
+            };
           }
-          return prev - 1;
+          return {
+            ...prev,
+            [currentM]: currentVal - 1,
+          };
         });
       }, 1000);
     }
@@ -134,24 +188,64 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback(() => {
     setIsRunning(true);
-    if (!isMuted) sounds.playTick();
-  }, [isMuted]);
+    if (!isMutedRef.current) sounds.playTick();
+  }, []);
 
   const pause = useCallback(() => {
     setIsRunning(false);
-    if (!isMuted) sounds.playTick();
-  }, [isMuted]);
+    if (!isMutedRef.current) sounds.playTick();
+  }, []);
 
   const stop = useCallback(() => {
     setIsRunning(false);
-    setSecondsLeft(TIMER_DURATIONS[mode]);
-    if (!isMuted) sounds.playTick();
-  }, [mode, isMuted]);
+    setModeSeconds((prev) => ({
+      ...prev,
+      [modeRef.current]: durationsInSecondsRef.current[modeRef.current],
+    }));
+    if (!isMutedRef.current) sounds.playTick();
+  }, []);
 
   const setMode = useCallback((newMode: TimerMode) => {
     setIsRunning(false);
     setModeState(newMode);
-    setSecondsLeft(TIMER_DURATIONS[newMode]);
+    if (!isMutedRef.current) sounds.playTick();
+  }, []);
+
+  const setCustomDurationInMinutes = useCallback((targetMode: TimerMode, minutes: number) => {
+    const validMins = Math.max(1, Math.min(180, minutes));
+    const newSeconds = validMins * 60;
+
+    setDurationsInMinutes((prev) => {
+      const next = { ...prev, [targetMode]: validMins };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+
+    setModeSeconds((prev) => {
+      // If setting duration for currently selected mode and not running, or if it exceeds new max
+      return {
+        ...prev,
+        [targetMode]: newSeconds,
+      };
+    });
+  }, []);
+
+  const resetAllDurationsToDefault = useCallback(() => {
+    setDurationsInMinutes(DEFAULT_DURATIONS_MINUTES);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    setModeSeconds({
+      work: DEFAULT_DURATIONS_MINUTES.work * 60,
+      shortBreak: DEFAULT_DURATIONS_MINUTES.shortBreak * 60,
+      longBreak: DEFAULT_DURATIONS_MINUTES.longBreak * 60,
+    });
   }, []);
 
   const toggleMute = useCallback(() => {
@@ -169,7 +263,10 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
 
   const fastForwardSession = useCallback(() => {
     if (isRunning) {
-      setSecondsLeft(2);
+      setModeSeconds((prev) => ({
+        ...prev,
+        [modeRef.current]: 2,
+      }));
     } else {
       handleSessionComplete();
     }
@@ -186,6 +283,7 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
         mode,
         secondsLeft,
         totalDuration,
+        durationsInMinutes,
         isRunning,
         totalSessionsCompleted,
         isMuted,
@@ -195,6 +293,8 @@ export function FocusTimerProvider({ children }: { children: ReactNode }) {
         pause,
         stop,
         setMode,
+        setCustomDurationInMinutes,
+        resetAllDurationsToDefault,
         toggleMute,
         skip,
         fastForwardSession,
