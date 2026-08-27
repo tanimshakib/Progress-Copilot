@@ -17,6 +17,20 @@ function isoDate(d: Date): string {
   return startOfUTCDay(d).toISOString().slice(0, 10);
 }
 
+export function calculateProgressScore(
+  completedTargets: number,
+  totalTargets: number,
+  completedTasks: number,
+  totalTasks: number,
+  streak: number,
+): number {
+  if (totalTargets === 0 && totalTasks === 0 && streak === 0) return 0;
+  const targetScore = totalTargets > 0 ? (completedTargets / totalTargets) * 40 : 20;
+  const taskScore = totalTasks > 0 ? (completedTasks / totalTasks) * 35 : 15;
+  const streakScore = Math.min(streak * 5, 25);
+  return Math.min(100, Math.max(0, Math.round(targetScore + taskScore + streakScore)));
+}
+
 export type ProductivityBreakdown = {
   completionScore: number; // max 50
   priorityScore: number; // max 30
@@ -215,6 +229,14 @@ export async function getDashboard(userId: string) {
     cells.push({ date: key, count: counts.get(key) ?? 0 });
   }
 
+  const progressScoreVal = calculateProgressScore(
+    completedTargetsCount,
+    allTargets.length,
+    completedTasksCount,
+    allUserTasks.length,
+    user.dailyStreak,
+  );
+
   const { productivityScore, scoreBreakdown } = calculateProductivityScore(
     allUserTasks,
     user.dailyStreak,
@@ -223,8 +245,8 @@ export async function getDashboard(userId: string) {
   return {
     user: {
       ...user,
+      progressScore: progressScoreVal,
       productivityScore,
-      progressScore: productivityScore,
       scoreBreakdown,
     },
     topTargets,
@@ -313,6 +335,14 @@ export async function getProgress(userId: string) {
     else pointsDistribution.low += earned;
   }
 
+  const progressScoreVal = calculateProgressScore(
+    completedTargetsCount,
+    targetBreakdown.length,
+    completedTasksCount,
+    allUserTasks.length,
+    user.dailyStreak,
+  );
+
   const { productivityScore, scoreBreakdown } = calculateProductivityScore(
     allUserTasks,
     user.dailyStreak,
@@ -321,8 +351,8 @@ export async function getProgress(userId: string) {
   return {
     user: {
       ...user,
+      progressScore: progressScoreVal,
       productivityScore,
-      progressScore: productivityScore,
       scoreBreakdown,
     },
     targetBreakdown,

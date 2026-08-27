@@ -15,7 +15,7 @@ import { useDashboard } from '../modules/dashboard/useDashboard';
 import { useTasks } from '../modules/tasks/useTasks';
 import { DashboardCard } from '../components/dashboard/DashboardCard';
 import { ContributionGrid } from '../components/dashboard/ContributionGrid';
-import { ProgressScore } from '../components/dashboard/ProductivityScore';
+import { ProgressScore, ProductivityScore } from '../components/dashboard/ProductivityScore';
 import { TargetProgressBars } from '../components/dashboard/TargetProgressBars';
 import type { Task } from '../lib/types';
 import { getErrorMessage } from '../lib/api';
@@ -38,7 +38,6 @@ function GithubIcon({ size = 20, className = '' }: { size?: number; className?: 
   );
 }
 
-import { FocusTimerCard } from '../components/gamification/FocusTimerCard';
 
 export function DashboardHomePage() {
   const { user, refresh } = useAuth();
@@ -107,16 +106,16 @@ export function DashboardHomePage() {
   return (
     <div className="space-y-6">
       {/* ─── Premium Profile & Progress Score Banner (Reports-style) ─────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-purple-200/80 dark:border-cardBorder bg-gradient-to-br from-slate-50/95 via-indigo-50/70 to-purple-50/60 dark:from-[#160e2e]/90 dark:to-[#0c071a]/95 p-6 shadow-md flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div className="rounded-2xl border border-purple-200/80 dark:border-cardBorder bg-gradient-to-br from-slate-50/95 via-indigo-50/70 to-purple-50/60 dark:from-[#160e2e]/90 dark:to-[#0c071a]/95 p-6 shadow-md flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-20 xl:gap-32">
         <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
           {avatar ? (
             <img
               src={avatar}
               alt={user?.fullName || dashUser.fullName}
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-purple-400 shadow-md shrink-0"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-purple-400 shadow-md shrink-0"
             />
           ) : (
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 text-white font-black text-2xl flex items-center justify-center shadow-md shrink-0">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-purple-700 via-indigo-600 to-pink-500 text-white font-black text-2xl flex items-center justify-center shadow-md shrink-0">
               {initial}
             </div>
           )}
@@ -146,9 +145,27 @@ export function DashboardHomePage() {
           </div>
         </div>
 
+        {/* ─── Progress Score (Old Ring) ─── */}
         <div className="flex items-center gap-4 bg-white/70 dark:bg-white/[0.03] p-4 rounded-2xl border border-purple-200/60 dark:border-white/10 shadow-sm shrink-0">
           <ProgressScore
             score={progressScoreVal}
+            subtitle={`${dashUser.points} pts earned`}
+          >
+            <div className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-fuchsia-400 flex items-center gap-1">
+              <Zap size={14} /> Progress Score
+            </div>
+            <div className="text-xs text-slate-600 dark:text-violet-200 mt-0.5 font-medium">
+              {progressScoreVal >= 80 ? 'Mastery Pace' : progressScoreVal >= 50 ? 'Steady Growth' : 'Getting Started'}
+            </div>
+          </ProgressScore>
+        </div>
+      </div>
+
+      {/* ─── Productivity Score (100-Point Gauge) ─── */}
+      <div className="rounded-2xl border border-purple-200/80 dark:border-cardBorder bg-gradient-to-br from-fuchsia-500/5 via-purple-500/5 to-indigo-500/5 dark:from-[#210d3d]/60 dark:to-[#0f0a24]/80 p-6 lg:px-12 xl:px-16 shadow-sm">
+        <div className="max-w-4xl mx-auto w-full">
+          <ProductivityScore
+            score={dashUser.productivityScore ?? 0}
             breakdown={dashUser.scoreBreakdown}
             subtitle={`${dashUser.points} total pts earned`}
           >
@@ -156,37 +173,30 @@ export function DashboardHomePage() {
               <Zap size={14} /> Productivity Score
             </div>
             <div className="text-xs text-slate-600 dark:text-violet-200 mt-0.5 font-medium">
-              100-Point Daily Performance Index
+              Completion (50%) + Priority (30%) + Streak (20%)
             </div>
-          </ProgressScore>
+          </ProductivityScore>
         </div>
       </div>
 
-      {/* ─── Gamification Focus Timer & Active Targets ─── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <FocusTimerCard />
-        </div>
-        <div className="lg:col-span-2">
-          <DashboardCard
-            title="Active Targets"
-            subtitle="Key milestones & sub-task progress."
-            action={
-              <Link
-                to="/dashboard/targets"
-                className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
-              >
-                View all →
-              </Link>
-            }
+      {/* ─── Active Targets ─── */}
+      <DashboardCard
+        title="Active Targets"
+        subtitle="Key milestones & sub-task progress."
+        action={
+          <Link
+            to="/dashboard/targets"
+            className="text-xs font-bold text-purple-600 dark:text-fuchsia-400 hover:underline transition"
           >
-            <TargetProgressBars
-              targets={topTargets}
-              emptyMessage="No active targets. Create one to start tracking."
-            />
-          </DashboardCard>
-        </div>
-      </div>
+            View all →
+          </Link>
+        }
+      >
+        <TargetProgressBars
+          targets={topTargets}
+          emptyMessage="No active targets. Create one to start tracking."
+        />
+      </DashboardCard>
 
       {/* ─── Recent Tasks ─── */}
       <DashboardCard

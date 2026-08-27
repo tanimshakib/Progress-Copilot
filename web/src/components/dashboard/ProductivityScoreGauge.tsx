@@ -7,10 +7,12 @@ export function ProductivityScoreGauge({
   score = 0,
   breakdown,
   size = 140,
+  showBreakdown = true,
 }: {
   score?: number;
   breakdown?: ProductivityBreakdown;
   size?: number;
+  showBreakdown?: boolean;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -114,29 +116,31 @@ export function ProductivityScoreGauge({
       </div>
 
       {/* Formula Breakdown Badge */}
-      <div className="mt-3 w-full max-w-xs rounded-xl bg-slate-100/80 dark:bg-white/[0.03] border border-purple-200/60 dark:border-white/10 p-2.5 text-[11px] text-slate-600 dark:text-violet-200/90 font-medium">
-        <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-xs mb-1.5">
-          <span className="flex items-center gap-1">
-            <Zap size={13} className="text-amber-500" /> Score Breakdown
-          </span>
-          <span className="font-mono text-purple-600 dark:text-fuchsia-400">{safeScore}/100</span>
-        </div>
+      {showBreakdown && (
+        <div className="mt-3 w-full max-w-xs rounded-xl bg-slate-100/80 dark:bg-white/[0.03] border border-purple-200/60 dark:border-white/10 p-2.5 text-[11px] text-slate-600 dark:text-violet-200/90 font-medium">
+          <div className="flex items-center justify-between font-bold text-slate-800 dark:text-white text-xs mb-1.5">
+            <span className="flex items-center gap-1">
+              <Zap size={13} className="text-amber-500" /> Score Breakdown
+            </span>
+            <span className="font-mono text-purple-600 dark:text-fuchsia-400">{safeScore}/100</span>
+          </div>
 
-        <div className="grid grid-cols-3 gap-1 text-center font-mono">
-          <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
-            <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Completion</div>
-            <div className="font-extrabold text-slate-900 dark:text-white">{compScore}/50</div>
-          </div>
-          <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
-            <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Priority</div>
-            <div className="font-extrabold text-slate-900 dark:text-white">{prioScore}/30</div>
-          </div>
-          <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
-            <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Streak</div>
-            <div className="font-extrabold text-slate-900 dark:text-white">{streakScore}/20</div>
+          <div className="grid grid-cols-3 gap-1 text-center font-mono">
+            <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
+              <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Completion</div>
+              <div className="font-extrabold text-slate-900 dark:text-white">{compScore}/50</div>
+            </div>
+            <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
+              <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Priority</div>
+              <div className="font-extrabold text-slate-900 dark:text-white">{prioScore}/30</div>
+            </div>
+            <div className="p-1 rounded-lg bg-white/80 dark:bg-cardBg/60 border border-slate-200/60 dark:border-white/5">
+              <div className="text-[9px] uppercase font-bold text-slate-400 dark:text-violet-300/60">Streak</div>
+              <div className="font-extrabold text-slate-900 dark:text-white">{streakScore}/20</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Popover / Detailed Modal Tooltip */}
       <AnimatePresence>
