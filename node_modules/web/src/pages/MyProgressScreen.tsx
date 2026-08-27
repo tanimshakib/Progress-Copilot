@@ -99,13 +99,14 @@ export function MyProgressScreen() {
         <div className="flex items-center gap-4 bg-white/70 dark:bg-white/[0.03] p-4 rounded-2xl border border-purple-200/60 dark:border-white/10 shadow-sm shrink-0">
           <ProgressScore
             score={progressScoreVal}
-            subtitle={`${progUser.dailyStreak}-day daily streak`}
+            breakdown={progUser.scoreBreakdown}
+            subtitle={`${progUser.points} total pts earned`}
           >
             <div className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-fuchsia-400 flex items-center gap-1">
-              <Zap size={14} /> Progress Score
+              <Zap size={14} /> Productivity Score
             </div>
             <div className="text-xs text-slate-600 dark:text-violet-200 mt-0.5 font-medium">
-              Driven by targets & tasks
+              Completion (50%) + Priority (30%) + Streak (20%)
             </div>
           </ProgressScore>
         </div>

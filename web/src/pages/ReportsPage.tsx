@@ -12,13 +12,13 @@ import {
   Loader2,
   TrendingUp,
   Award,
-  Zap,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { DashboardCard } from '../components/dashboard/DashboardCard';
 import { TaskCompletionTrendChart } from '../components/dashboard/TaskCompletionTrendChart';
 import { PointsDistributionChart } from '../components/dashboard/PointsDistributionChart';
+import { ProductivityScoreGauge } from '../components/dashboard/ProductivityScoreGauge';
 
 export function ReportsPage() {
   const { addToast } = useToast();
@@ -65,7 +65,6 @@ export function ReportsPage() {
 
   const user = data?.user;
   const stats = data?.stats;
-  const progressScore = stats?.progressScore ?? 0;
   const avatar = user?.avatar;
   const initial = (user?.fullName || '?').trim().charAt(0).toUpperCase();
 
@@ -156,30 +155,12 @@ export function ReportsPage() {
 
           {/* Metric Cards Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Progress Score Card */}
-            <div className="rounded-2xl border-2 border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/10 to-indigo-500/10 dark:from-[#210d3d]/90 dark:to-[#0f0a24]/95 p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-fuchsia-400">
-                  Progress Score
-                </span>
-                <div className="w-8 h-8 rounded-xl bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-300 flex items-center justify-center">
-                  <Zap size={18} />
-                </div>
-              </div>
-              <div className="text-3xl font-black text-slate-900 dark:text-white">
-                {progressScore} <span className="text-sm font-semibold text-slate-500 dark:text-violet-300">/ 100</span>
-              </div>
-              <div className="mt-3">
-                <div className="h-2.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-emerald-400 via-sky-500 to-purple-600 rounded-full"
-                    style={{ width: `${progressScore}%` }}
-                  />
-                </div>
-                <p className="text-[11px] text-purple-700 dark:text-fuchsia-300 font-bold mt-1.5 flex items-center gap-1">
-                  <TrendingUp size={12} /> {progressScore >= 80 ? 'Exceptional Progress!' : progressScore >= 50 ? 'Steady Growth Track' : 'Getting Started'}
-                </p>
-              </div>
+            {/* Productivity Score Card */}
+            <div className="rounded-2xl border-2 border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/10 to-indigo-500/10 dark:from-[#210d3d]/90 dark:to-[#0f0a24]/95 p-5 shadow-sm flex flex-col items-center justify-center">
+              <ProductivityScoreGauge
+                score={stats.productivityScore ?? stats.progressScore ?? 0}
+                breakdown={stats.scoreBreakdown}
+              />
             </div>
 
             {/* Target Completion */}

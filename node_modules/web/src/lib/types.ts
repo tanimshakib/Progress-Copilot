@@ -148,6 +148,19 @@ export type DashboardProjects = {
   repoCount: number;
 };
 
+export type ProductivityBreakdown = {
+  completionScore: number;
+  priorityScore: number;
+  consistencyScore: number;
+  totalTasks: number;
+  completedTasks: number;
+  completionRate: number;
+  highPriorityTotal: number;
+  highPriorityCompleted: number;
+  highPriorityRate: number;
+  dailyStreak: number;
+};
+
 /** Payload of GET /api/dashboard. */
 export type DashboardData = {
   user: {
@@ -158,6 +171,7 @@ export type DashboardData = {
     dailyStreak: number;
     createdAt: string;
     productivityScore: number;
+    scoreBreakdown?: ProductivityBreakdown;
   };
   topTargets: TargetWithProgress[];
   pendingTasks: Task[];
@@ -178,6 +192,7 @@ export type ProgressData = {
     points: number;
     dailyStreak: number;
     productivityScore: number;
+    scoreBreakdown?: ProductivityBreakdown;
   };
   targetBreakdown: TargetWithProgress[];
   tasksCompletedLast30Days: ContributionCell[];

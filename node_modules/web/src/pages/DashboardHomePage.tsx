@@ -149,13 +149,14 @@ export function DashboardHomePage() {
         <div className="flex items-center gap-4 bg-white/70 dark:bg-white/[0.03] p-4 rounded-2xl border border-purple-200/60 dark:border-white/10 shadow-sm shrink-0">
           <ProgressScore
             score={progressScoreVal}
-            subtitle={`${dashUser.points} pts earned`}
+            breakdown={dashUser.scoreBreakdown}
+            subtitle={`${dashUser.points} total pts earned`}
           >
             <div className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-fuchsia-400 flex items-center gap-1">
-              <Zap size={14} /> Progress Score
+              <Zap size={14} /> Productivity Score
             </div>
             <div className="text-xs text-slate-600 dark:text-violet-200 mt-0.5 font-medium">
-              {progressScoreVal >= 80 ? 'Mastery Pace' : progressScoreVal >= 50 ? 'Steady Growth' : 'Getting Started'}
+              100-Point Daily Performance Index
             </div>
           </ProgressScore>
         </div>

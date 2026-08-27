@@ -3,6 +3,7 @@ import PDFDocument from 'pdfkit';
 import { asyncHandler } from '../../lib/asyncHandler';
 import { prisma } from '../../lib/prisma';
 import { notFound } from '../../lib/errors';
+import { calculateProductivityScore } from '../dashboard/dashboard.service';
 
 const TREND_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -16,6 +17,37 @@ function startOfUTCDay(d: Date): Date {
 function isoDate(d: Date): string {
   return startOfUTCDay(d).toISOString().slice(0, 10);
 }
+
+export const getProductivityScore = asyncHandler(async (req: Request, res) => {
+  const userId = (req as any).user?.id as string;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      points: true,
+      dailyStreak: true,
+    },
+  });
+  if (!user) throw notFound('User not found');
+
+  const tasks = await prisma.task.findMany({
+    where: { userId },
+    select: { isCompleted: true, priority: true },
+  });
+
+  const { productivityScore, scoreBreakdown } = calculateProductivityScore(
+    tasks,
+    user.dailyStreak,
+  );
+
+  return res.json({
+    productivityScore,
+    points: user.points,
+    dailyStreak: user.dailyStreak,
+    breakdown: scoreBreakdown,
+  });
+});
 
 async function getProgressMetrics(userId: string) {
   const now = new Date();
@@ -91,19 +123,26 @@ export const getReportSummary = asyncHandler(async (req: Request, res) => {
   const completedTargets = targets.filter((t) => t.status === 'COMPLETED').length;
   const completedTasks = tasks.filter((t) => t.isCompleted).length;
 
-  const targetScore = targets.length ? (completedTargets / targets.length) * 40 : 0;
-  const taskScore = tasks.length ? (completedTasks / tasks.length) * 35 : 0;
-  const streakScore = Math.min(user.dailyStreak * 5, 25);
-  const progressScore = Math.min(100, Math.round(targetScore + taskScore + streakScore));
+  const { productivityScore, scoreBreakdown } = calculateProductivityScore(
+    tasks,
+    user.dailyStreak,
+  );
 
   const { tasksCompletedLast30Days, pointsDistribution } = await getProgressMetrics(userId);
 
   return res.json({
-    user,
+    user: {
+      ...user,
+      productivityScore,
+      progressScore: productivityScore,
+      scoreBreakdown,
+    },
     stats: {
       points: user.points,
       dailyStreak: user.dailyStreak,
-      progressScore,
+      productivityScore,
+      progressScore: productivityScore,
+      scoreBreakdown,
       totalTargets: targets.length,
       completedTargets,
       targetCompletionRate: targets.length ? Math.round((completedTargets / targets.length) * 100) : 0,
