@@ -11,9 +11,12 @@
     "dev:web": "npm --workspace web run dev",
     "dev": "npm run dev:api & npm run dev:web",
     "build:api": "npm --workspace api run build",
-    "build:web": "npm --workspace web run build"
+    "build:web": "npm --workspace web run build",
+    "prisma:generate": "npm --workspace api run prisma:generate",
+    "prisma:migrate": "npm --workspace api run prisma:migrate",
+    "postinstall": "npm --workspace api run prisma:generate"
   },
   "dependencies": {
-    "@prisma/client": "^7.9.1"
+    "@prisma/client": "5.22.0"
   }
 }
