@@ -146,8 +146,8 @@ export function ProfileDropdown({
 
         {/* ───── Links ───── */}
         <div className="px-2 py-1.5">
-          <MenuItem onClick={go('/dashboard')} icon={<HomeIcon />}>
-            Dashboard
+          <MenuItem onClick={go('/dashboard/leaderboard')} icon={<TrophyIcon />}>
+            Leaderboard
           </MenuItem>
           <MenuItem onClick={go('/dashboard/ai-assistant')} icon={<SparkIcon />}>
             Edith AI Assistant
@@ -232,7 +232,11 @@ function svg(d: string, size = 16) {
   );
 }
 
-const HomeIcon = () => svg('M3 11.5 12 4l9 7.5|M5 10v10h14V10', 15);
+const TrophyIcon = () =>
+  svg(
+    'M6 9H4.5a2.5 2.5 0 0 1 0-5H6|M18 9h1.5a2.5 2.5 0 0 0 0-5H18|M4 22h16|M10 14.66V17c0 .55-.45 1-1 1H8v4h8v-4h-1c-.55 0-1-.45-1-1v-2.34|M18 4H6v7a6 6 0 0 0 12 0V4z',
+    15,
+  );
 const SparkIcon = () =>
   svg(
     'M12 3v4|M12 17v4|M5 12H1|M23 12h-4|M6.34 6.34 4.22 4.22|M19.78 19.78l-2.12-2.12|M6.34 17.66l-2.12 2.12|M19.78 4.22l-2.12 2.12',

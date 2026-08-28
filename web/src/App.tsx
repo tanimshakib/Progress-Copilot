@@ -18,6 +18,7 @@ import {
 } from './pages/DashboardPlaceholderPage';
 import { TargetsPage } from './pages/TargetsPage';
 import { TasksPage } from './pages/TasksPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
@@ -64,6 +65,8 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardHomePage />} />
               <Route path="/dashboard/my-progress" element={<MyProgressPage />} />
               <Route path="/dashboard/ai-assistant" element={<AIAssistantPage />} />
+              <Route path="/dashboard/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
               <Route path="/dashboard/targets" element={<TargetsPage />} />
               <Route path="/dashboard/tasks" element={<TasksPage />} />
               <Route path="/dashboard/reminders" element={<RemindersPage />} />

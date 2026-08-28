@@ -17,6 +17,7 @@ export const GROUP_A: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', end: true },
   { to: '/dashboard/my-progress', label: 'My Progress' },
   { to: '/dashboard/ai-assistant', label: 'AI Assistant' },
+  { to: '/dashboard/leaderboard', label: 'Leaderboard' },
 ];
 
 export const GROUP_B: NavItem[] = [

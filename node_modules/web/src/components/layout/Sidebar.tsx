@@ -273,10 +273,16 @@ function ChevronRightIcon() {
 
 /* ────────────────────── Group lists (icons defined above) ────────────────────── */
 
+const TrophyIcon = () =>
+  svg(
+    'M6 9H4.5a2.5 2.5 0 0 1 0-5H6|M18 9h1.5a2.5 2.5 0 0 0 0-5H18|M4 22h16|M10 14.66V17c0 .55-.45 1-1 1H8v4h8v-4h-1c-.55 0-1-.45-1-1v-2.34|M18 4H6v7a6 6 0 0 0 12 0V4z',
+  );
+
 const GROUP_A_ITEMS: Item[] = [
   { ...GROUP_A[0], icon: <HomeIcon /> },
   { ...GROUP_A[1], icon: <ChartIcon /> },
   { ...GROUP_A[2], icon: <SparkleIcon /> },
+  { ...GROUP_A[3], icon: <TrophyIcon /> },
 ];
 
 const GROUP_B_ITEMS: Item[] = [
