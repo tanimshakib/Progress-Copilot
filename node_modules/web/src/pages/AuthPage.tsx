@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../lib/api';
 import Logo from '../components/Logo';
@@ -224,18 +225,39 @@ function Field({
   label: string; value: string; onChange: (v: string) => void;
   type?: string; placeholder?: string; required?: boolean; autoComplete?: string;
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === 'password';
+  const inputType = isPasswordField ? (showPassword ? 'text' : 'password') : type;
+
   return (
     <label className="block">
       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        autoComplete={autoComplete}
-        className="mt-1 w-full px-4 py-3 rounded-xl bg-[#120e22] border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition"
-      />
+      <div className="relative mt-1">
+        <input
+          type={inputType}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          autoComplete={autoComplete}
+          className="w-full px-4 py-3 pr-11 rounded-xl bg-[#120e22] border border-white/10 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/30 transition"
+        />
+        {isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-300 transition-colors focus:outline-none p-1 rounded-md"
+            title={showPassword ? 'Hide password' : 'Show password'}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        )}
+      </div>
     </label>
   );
 }
