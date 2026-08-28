@@ -12,6 +12,7 @@
     "dev": "npm run dev:api & npm run dev:web",
     "build:api": "npm --workspace api run build",
     "build:web": "npm --workspace web run build",
+    "build": "npm run build:web",
     "prisma:generate": "npm --workspace api run prisma:generate",
     "prisma:migrate": "npm --workspace api run prisma:migrate",
     "postinstall": "npm --workspace api run prisma:generate"

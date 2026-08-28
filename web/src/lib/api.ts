@@ -1,8 +1,12 @@
 /// <reference types="vite/client" />
 import axios from 'axios';
 
+const defaultBaseUrl = import.meta.env.DEV ? 'http://localhost:4000' : '';
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000',
+  baseURL: import.meta.env.VITE_API_BASE_URL !== undefined && import.meta.env.VITE_API_BASE_URL !== '' 
+    ? import.meta.env.VITE_API_BASE_URL 
+    : defaultBaseUrl,
   withCredentials: true, // accept httpOnly cookie + send it back
   // 60s covers the slowest case (a Gemini reply can take 10–20s, plus the
   // backend round-trip + DB writes). Fast endpoints resolve in <1s so
