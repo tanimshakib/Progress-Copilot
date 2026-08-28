@@ -98,7 +98,7 @@ export function LeaderboardPage() {
   const currentUserInList = currentUserInfo && currentUserInfo.rank > 3;
 
   return (
-    <div className="relative min-h-screen pb-24 space-y-8">
+    <div className="relative min-h-screen pb-24 space-y-8 px-2 sm:px-4 md:px-6 max-w-7xl mx-auto">
       {/* ────────────────────── Banner Header ────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-purple-900/90 via-indigo-900/80 to-slate-900/90 border border-purple-500/30 text-white shadow-2xl">
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-fuchsia-500/20 rounded-full blur-3xl pointer-events-none" />
@@ -143,7 +143,7 @@ export function LeaderboardPage() {
       </div>
 
       {/* ────────────────────── League Selector Tabs ────────────────────── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex items-center gap-2.5 overflow-x-auto pb-3 pt-1 px-1.5 scrollbar-none">
         {LEAGUES.map((league) => {
           const isActive = currentLeague === league.key;
           return (
@@ -325,12 +325,15 @@ export function LeaderboardPage() {
                           </div>
                         </div>
 
-                        {/* Right: Weekly Points */}
-                        <div className="shrink-0 text-right">
+                        {/* Right: Weekly & Total Points */}
+                        <div className="shrink-0 text-right space-y-1">
                           <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-500/15 text-purple-700 dark:text-fuchsia-300 font-extrabold text-xs border border-purple-500/20 shadow-sm">
                             <Zap size={13} className="text-yellow-400" />
-                            {user.weeklyPoints} pts
+                            {user.weeklyPoints} wk pts
                           </div>
+                          <p className="text-[11px] font-bold text-amber-600 dark:text-amber-300 flex items-center justify-end gap-1">
+                            ⭐ {user.points} total pts
+                          </p>
                         </div>
                       </div>
                     );
@@ -434,13 +437,18 @@ function PodiumCard({
       </div>
 
       {/* User Info */}
-      <div className="text-center w-full min-w-0 mt-2">
+      <div className="text-center w-full min-w-0 mt-2 space-y-1">
         <p className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
           {user.fullName}
         </p>
-        <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-fuchsia-300 font-extrabold text-[11px]">
-          <Zap size={11} className="text-yellow-400" />
-          {user.weeklyPoints} pts
+        <div className="flex flex-col items-center gap-1">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-fuchsia-300 font-extrabold text-[11px]">
+            <Zap size={11} className="text-yellow-400" />
+            {user.weeklyPoints} wk pts
+          </span>
+          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-300">
+            ⭐ {user.points} total pts
+          </span>
         </div>
       </div>
     </div>

@@ -28,14 +28,34 @@ Tone:
 ## APP PLATFORM RULES
 Progress Copilot tracks Targets, Tasks, Future Goals, Notes, Courses, GitHub Projects, PDF Reports, Reminders, and Progress Scores.`;
 
-const GEMINI_DEFAULT_MODEL = 'gemini-1.5-flash';
+const GEMINI_DEFAULT_MODEL = 'gemini-3.6-flash';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+/**
+ * Curated fallback hierarchy of standard Gemini models.
+ * If the configured model hits a rate limit (429/403/503), the engine
+ * automatically auto-detects and fails over down this list.
+ */
 const GEMINI_FALLBACK_MODELS = [
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+  'gemini-3.7-flash',
+  'gemini-3-flash-preview',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro',
+  'gemini-pro-latest',
   'gemini-1.5-flash',
   'gemini-1.5-pro',
-  'gemini-2.0-flash-exp',
-  'gemini-pro',
+  'gemini-1.0-pro',
 ];
+
+// In-memory state for dynamic model auto-detection and last working model
+let lastWorkingModel: string | null = null;
+let cachedDetectedModels: string[] = [];
+let lastDetectionTime = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 const TITLE_MAX_LEN = 48;
 
 function autoTitleFromPrompt(prompt: string): string {
@@ -235,6 +255,88 @@ function getAvailableApiKeys(): string[] {
   return keys;
 }
 
+/**
+ * Auto-detect available models directly from Google Gemini API (/v1beta/models).
+ * Only returns models that support content generation ('generateContent').
+ */
+async function fetchAvailableGeminiModels(apiKey: string): Promise<string[]> {
+  const now = Date.now();
+  if (cachedDetectedModels.length > 0 && now - lastDetectionTime < CACHE_TTL_MS) {
+    return cachedDetectedModels;
+  }
+
+  try {
+    const url = `${GEMINI_API_BASE}?key=${apiKey}`;
+    const res = await fetch(url, { method: 'GET' });
+    if (!res.ok) {
+      return cachedDetectedModels.length > 0 ? cachedDetectedModels : GEMINI_FALLBACK_MODELS;
+    }
+
+    const data = (await res.json()) as any;
+    if (Array.isArray(data.models)) {
+      const validModels: string[] = [];
+      for (const m of data.models) {
+        const name = typeof m.name === 'string' ? m.name.replace(/^models\//, '') : '';
+        const methods: string[] = Array.isArray(m.supportedGenerationMethods)
+          ? m.supportedGenerationMethods
+          : [];
+
+        if (
+          name &&
+          methods.includes('generateContent') &&
+          !name.includes('embedding') &&
+          !name.includes('tts') &&
+          !name.includes('transcribe') &&
+          !name.includes('audio') &&
+          !name.includes('imagen')
+        ) {
+          validModels.push(name);
+        }
+      }
+
+      if (validModels.length > 0) {
+        // Sort: flash models first, then pro, then others
+        validModels.sort((a, b) => {
+          const aRank = a.includes('flash') ? 0 : a.includes('pro') ? 1 : 2;
+          const bRank = b.includes('flash') ? 0 : b.includes('pro') ? 1 : 2;
+          return aRank - bRank;
+        });
+
+        cachedDetectedModels = validModels;
+        lastDetectionTime = now;
+        console.log(`[Edith AI Auto-Detect] Auto-detected ${validModels.length} available Gemini models.`);
+        return validModels;
+      }
+    }
+  } catch (err: any) {
+    console.warn('[Edith AI Auto-Detect] Unable to auto-detect models via API:', err?.message || err);
+  }
+
+  return cachedDetectedModels.length > 0 ? cachedDetectedModels : GEMINI_FALLBACK_MODELS;
+}
+
+/**
+ * Get ordered candidate models to try:
+ * 1. Env configured model (GEMINI_MODEL)
+ * 2. Last working model (if known)
+ * 3. Dynamic auto-detected models from API
+ * 4. In-code curated fallback list
+ */
+async function getCandidateModels(apiKey?: string): Promise<string[]> {
+  const primaryModel = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
+  const detected = apiKey ? await fetchAvailableGeminiModels(apiKey) : [];
+
+  const candidateList = [
+    primaryModel,
+    ...(lastWorkingModel ? [lastWorkingModel] : []),
+    ...detected,
+    ...GEMINI_FALLBACK_MODELS,
+  ];
+
+  // Remove duplicates while preserving order
+  return Array.from(new Set(candidateList)).filter(Boolean);
+}
+
 async function callGemini(messages: ChatMessage[]): Promise<string> {
   const apiKeys = getAvailableApiKeys();
   if (apiKeys.length === 0) {
@@ -242,40 +344,66 @@ async function callGemini(messages: ChatMessage[]): Promise<string> {
     return `[Edith AI Offline Mode]: I received your message: "${lastUser.slice(0, 60)}". Configure GEMINI_API_KEY to activate full AI assistance.`;
   }
 
-  const primaryModel = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
-  const modelsToTry = Array.from(new Set([primaryModel, ...GEMINI_FALLBACK_MODELS]));
-
   let lastError: any = null;
 
-  // Try each API key in rotation if previous key runs out of tokens / hits rate limit / errors out
+  // Try each API key in rotation
   for (const apiKey of apiKeys) {
+    const modelsToTry = await getCandidateModels(apiKey);
+
     for (const model of modelsToTry) {
       try {
-        return await callGeminiForModel(model, apiKey, messages);
+        const reply = await callGeminiForModel(model, apiKey, messages);
+        // Track the successfully responding model for future calls
+        if (lastWorkingModel !== model) {
+          console.log(`[Edith AI Auto-Detect] Model selected: "${model}" (Active & Operational)`);
+          lastWorkingModel = model;
+        }
+        return reply;
       } catch (err: any) {
         lastError = err;
+        const errMessage = err?.message || String(err);
+        const status = err?.status;
 
-        // If 503 (model temporarily busy), wait 500ms and try one quick retry
-        if (err.status === 503) {
-          await new Promise((r) => setTimeout(r, 500));
+        console.warn(
+          `[Edith AI Auto-Detect] Model "${model}" attempt failed (HTTP ${status || 'Err'}): ${errMessage.slice(0, 120)}. Trying next model fallback...`,
+        );
+
+        // If 503 (model temporarily busy), wait 400ms and try one quick retry on same model
+        if (status === 503) {
+          await new Promise((r) => setTimeout(r, 400));
           try {
-            return await callGeminiForModel(model, apiKey, messages);
+            const reply = await callGeminiForModel(model, apiKey, messages);
+            lastWorkingModel = model;
+            return reply;
           } catch (retryErr: any) {
             lastError = retryErr;
           }
         }
 
-        if (err.status === 404 || err.status === 400 || err.status === 503) {
+        // Continue to try next candidate model on rate limits (429), quota limits (403), busy (503), missing model (404/400)
+        if (
+          status === 429 ||
+          status === 403 ||
+          status === 404 ||
+          status === 400 ||
+          status === 503 ||
+          errMessage.includes('RESOURCE_EXHAUSTED') ||
+          errMessage.includes('QUOTA_EXHAUSTED') ||
+          errMessage.includes('rate limit')
+        ) {
           continue;
         }
 
-        // If key auth error (401/429), break to try next API key
-        break;
+        // If key unauthorized (401), break model loop to try next API key
+        if (status === 401) {
+          console.warn(`[Edith AI Auto-Detect] API Key unauthorized (401). Switching to next API key...`);
+          break;
+        }
       }
     }
   }
 
-  throw lastError || new Error('Failed to reach Gemini API across all configured API keys.');
+  throw lastError || new Error('Failed to reach Gemini API across all configured API keys and auto-detected models.');
 }
 
 /* ────────────────────────── CRUD & Controller Export ────────────────────────── */

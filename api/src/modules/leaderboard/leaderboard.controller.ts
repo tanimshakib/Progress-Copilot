@@ -15,6 +15,13 @@ const VALID_LEAGUES: League[] = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMON
 export const getLeaderboard = asyncHandler(async (req: Request, res: Response) => {
   const currentUserId = (req as any).user?.id as string;
 
+  // One-time auto sync: if legacy users have points > 0 but weeklyPoints == 0, sync weeklyPoints = points
+  try {
+    await prisma.$executeRaw`UPDATE "User" SET "weeklyPoints" = "points" WHERE "weeklyPoints" = 0 AND "points" > 0`;
+  } catch (err) {
+    // Non-blocking in case of DB read-only replica
+  }
+
   const currentUser = await prisma.user.findUnique({
     where: { id: currentUserId },
     select: {
