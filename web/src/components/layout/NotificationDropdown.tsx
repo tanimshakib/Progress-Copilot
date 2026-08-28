@@ -2,7 +2,19 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Bell, Clock, Target, CheckSquare, Trash2, ArrowRight, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Bell,
+  Clock,
+  Target,
+  CheckSquare,
+  Trash2,
+  ArrowRight,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  AlertTriangle,
+  Flame,
+} from 'lucide-react';
 import { api } from '../../lib/api';
 
 export function NotificationDropdown({
@@ -17,20 +29,50 @@ export function NotificationDropdown({
   const panelRef = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const { data: remindersData, isLoading } = useQuery({
+  // Fetch penalty / system notifications
+  const { data: notifData, isLoading: isLoadingNotifs } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/notifications');
+      return data.notifications || [];
+    },
+    refetchInterval: 15000,
+  });
+
+  // Fetch reminders
+  const { data: remindersData, isLoading: isLoadingReminders } = useQuery({
     queryKey: ['reminders'],
     queryFn: async () => {
       const { data } = await api.get('/api/reminders');
       return data.reminders || [];
     },
+    refetchInterval: 15000,
   });
 
-  const deleteMutation = useMutation({
+  const deleteReminderMutation = useMutation({
     mutationFn: async (id: string) => {
       await api.delete(`/api/reminders/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
+    },
+  });
+
+  const deleteNotifMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/api/notifications/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  const clearAllNotifsMutation = useMutation({
+    mutationFn: async () => {
+      await api.delete('/api/notifications/clear-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
@@ -53,13 +95,40 @@ export function NotificationDropdown({
     };
   }, [onClose, ignoreRef]);
 
+  const rawNotifications = notifData ?? [];
   const rawReminders = remindersData ?? [];
-  // Sort most recent first
-  const sortedReminders = [...rawReminders].sort(
-    (a: any, b: any) => new Date(b.createdAt || b.time).getTime() - new Date(a.createdAt || a.time).getTime(),
-  );
 
-  const displayedReminders = showAll ? sortedReminders : sortedReminders.slice(0, 3);
+  // Combine both streams for a rich notifications feed
+  const combinedFeed: Array<{
+    id: string;
+    isNotification: boolean;
+    title: string;
+    message?: string;
+    type?: string;
+    time: string;
+    target?: any;
+    task?: any;
+  }> = [
+    ...rawNotifications.map((n: any) => ({
+      id: n.id,
+      isNotification: true,
+      title: n.title,
+      message: n.message,
+      type: n.type,
+      time: n.createdAt,
+    })),
+    ...rawReminders.map((r: any) => ({
+      id: r.id,
+      isNotification: false,
+      title: r.target?.title || r.task?.title || 'Reminder',
+      time: r.time,
+      target: r.target,
+      task: r.task,
+    })),
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+
+  const displayedItems = showAll ? combinedFeed : combinedFeed.slice(0, 4);
+  const isLoading = isLoadingNotifs || isLoadingReminders;
 
   return (
     <motion.div
@@ -70,52 +139,111 @@ export function NotificationDropdown({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -16, scale: 0.94 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute right-12 sm:right-16 top-[calc(100%+12px)] w-[22rem] rounded-2xl z-50 p-[1.5px] bg-gradient-to-br from-fuchsia-500/60 via-purple-500/40 to-sky-400/60 shadow-[0_20px_50px_rgba(99,102,241,0.25)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.85)]"
+      className="absolute right-12 sm:right-16 top-[calc(100%+12px)] w-[23rem] rounded-2xl z-50 p-[1.5px] bg-gradient-to-br from-fuchsia-500/60 via-purple-500/40 to-sky-400/60 shadow-[0_20px_50px_rgba(99,102,241,0.25)] dark:shadow-[0_25px_60px_rgba(0,0,0,0.85)]"
       style={{ transformOrigin: 'top right' }}
     >
       <div className="relative w-full h-full rounded-[14px] overflow-hidden p-4 bg-gradient-to-b from-slate-50 via-indigo-50/90 to-purple-50 text-slate-900 dark:bg-gradient-to-b dark:from-[#160f2e] dark:via-[#110a24] dark:to-[#0b0718] dark:text-white backdrop-blur-xl border border-purple-200/80 dark:border-purple-500/25">
         <div className="flex items-center justify-between pb-3 border-b border-purple-200/60 dark:border-white/10 mb-3">
           <div className="flex items-center gap-2">
             <Bell size={18} className="text-purple-600 dark:text-fuchsia-400" />
-            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Notifications & Reminders</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white">Notifications & Alerts</h3>
           </div>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-fuchsia-300 font-bold">
-            {sortedReminders.length}
-          </span>
+          <div className="flex items-center gap-2">
+            {rawNotifications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => clearAllNotifsMutation.mutate()}
+                className="text-[10px] text-purple-600 hover:text-rose-500 dark:text-violet-300 dark:hover:text-rose-400 font-semibold transition"
+              >
+                Clear alerts
+              </button>
+            )}
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-fuchsia-300 font-bold">
+              {combinedFeed.length}
+            </span>
+          </div>
         </div>
 
         {isLoading && (
           <div className="space-y-2 py-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-12 rounded-xl bg-slate-200/60 dark:bg-white/5 animate-pulse" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 rounded-xl bg-slate-200/60 dark:bg-white/5 animate-pulse" />
             ))}
           </div>
         )}
 
-        {!isLoading && sortedReminders.length === 0 && (
+        {!isLoading && combinedFeed.length === 0 && (
           <div className="py-6 text-center text-slate-500 dark:text-violet-300/70">
             <CheckCircle2 size={28} className="mx-auto text-emerald-500/60 mb-1.5" />
-            <p className="text-xs font-semibold">No pending reminders</p>
+            <p className="text-xs font-semibold">No notifications or reminders</p>
             <p className="text-[11px] text-slate-400 dark:text-violet-400/50 mt-0.5">You're all caught up!</p>
           </div>
         )}
 
-        {!isLoading && sortedReminders.length > 0 && (
+        {!isLoading && combinedFeed.length > 0 && (
           <div>
-            <div className={`space-y-2 ${showAll ? 'max-h-72 overflow-y-auto pr-1.5' : ''}`}>
-              {displayedReminders.map((r: any) => {
-                const linkedTitle = r.target?.title || r.task?.title || 'Reminder';
-                const isTarget = !!r.target;
-                const dateStr = new Date(r.time).toLocaleString([], {
+            <div className={`space-y-2 ${showAll ? 'max-h-80 overflow-y-auto pr-1.5' : ''}`}>
+              {displayedItems.map((item) => {
+                const dateStr = new Date(item.time).toLocaleString([], {
                   month: 'short',
                   day: 'numeric',
                   hour: '2-digit',
                   minute: '2-digit',
                 });
 
+                if (item.isNotification) {
+                  const isPenalty =
+                    item.type === 'PENALTY' || item.type === 'INACTIVITY' || item.type === 'STREAK_BREAK';
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-start justify-between gap-2 p-2.5 rounded-xl border transition ${
+                        isPenalty
+                          ? 'border-rose-300/70 dark:border-rose-500/30 bg-rose-500/10 dark:bg-rose-500/15'
+                          : 'border-purple-200/60 dark:border-white/5 bg-white/80 dark:bg-white/[0.03]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                            item.type === 'STREAK_BREAK'
+                              ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                              : 'bg-rose-500/20 text-rose-700 dark:text-rose-400'
+                          }`}
+                        >
+                          {item.type === 'STREAK_BREAK' ? <Flame size={14} /> : <AlertTriangle size={14} />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-slate-700 dark:text-violet-200 mt-0.5 leading-snug">
+                            {item.message}
+                          </p>
+                          <p className="text-[10px] text-slate-500 dark:text-violet-400/60 flex items-center gap-1 mt-1">
+                            <Clock size={10} /> {dateStr}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => deleteNotifMutation.mutate(item.id)}
+                        className="p-1 text-slate-400 hover:text-rose-500 transition shrink-0"
+                        title="Dismiss"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Render Reminder
+                const isTarget = !!item.target;
                 return (
                   <div
-                    key={r.id}
+                    key={item.id}
                     className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-purple-200/60 dark:border-white/5 bg-white/80 dark:bg-white/[0.03] hover:border-purple-400 transition"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -129,7 +257,7 @@ export function NotificationDropdown({
                         {isTarget ? <Target size={14} /> : <CheckSquare size={14} />}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{linkedTitle}</p>
+                        <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{item.title}</p>
                         <p className="text-[10px] text-slate-500 dark:text-violet-300/70 flex items-center gap-1">
                           <Clock size={10} /> {dateStr}
                         </p>
@@ -138,7 +266,7 @@ export function NotificationDropdown({
 
                     <button
                       type="button"
-                      onClick={() => deleteMutation.mutate(r.id)}
+                      onClick={() => deleteReminderMutation.mutate(item.id)}
                       className="p-1 text-slate-400 hover:text-rose-500 transition shrink-0"
                       title="Dismiss"
                     >
@@ -149,7 +277,7 @@ export function NotificationDropdown({
               })}
             </div>
 
-            {sortedReminders.length > 3 && (
+            {combinedFeed.length > 4 && (
               <button
                 type="button"
                 onClick={() => setShowAll((v) => !v)}
@@ -161,7 +289,7 @@ export function NotificationDropdown({
                   </>
                 ) : (
                   <>
-                    See More ({sortedReminders.length - 3} previous) <ChevronDown size={14} />
+                    See More ({combinedFeed.length - 4} previous) <ChevronDown size={14} />
                   </>
                 )}
               </button>

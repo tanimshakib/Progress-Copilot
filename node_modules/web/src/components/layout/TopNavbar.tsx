@@ -30,6 +30,15 @@ export function TopNavbar() {
   const avatarBtnRef = useRef<HTMLButtonElement>(null);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
 
+  const { data: notificationsData } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/notifications');
+      return data.notifications || [];
+    },
+    refetchInterval: 15000,
+  });
+
   const { data: remindersData } = useQuery({
     queryKey: ['reminders'],
     queryFn: async () => {
@@ -39,16 +48,21 @@ export function TopNavbar() {
     refetchInterval: 15000,
   });
 
+  const notifications = notificationsData || [];
   const reminders = remindersData || [];
 
-  // Red light should only be active IF there are triggered reminders that occurred after the user last viewed notifications
+  // Red light active IF there are unread notifications OR triggered reminders after user last viewed
   const hasUnreadAlerts = useMemo(() => {
     const now = Date.now();
-    return reminders.some((r: any) => {
+    const hasUnreadNotifs = notifications.some(
+      (n: any) => !n.isRead || new Date(n.createdAt).getTime() > lastViewedNotifs,
+    );
+    const hasTriggeredReminders = reminders.some((r: any) => {
       const rTime = new Date(r.time).getTime();
       return rTime <= now && rTime > lastViewedNotifs;
     });
-  }, [reminders, lastViewedNotifs]);
+    return hasUnreadNotifs || hasTriggeredReminders;
+  }, [notifications, reminders, lastViewedNotifs]);
 
   const handleOpenNotifs = () => {
     const nextState = !notifOpen;
@@ -183,11 +197,13 @@ function StatChip({
       ? 'from-orange-500/20 to-rose-500/10 text-orange-700 dark:text-orange-300 ring-orange-500/30'
       : 'from-yellow-500/20 to-amber-500/10 text-yellow-700 dark:text-yellow-300 ring-yellow-500/30';
 
+  const labelText = tone === 'orange' ? 'Streak' : 'Points';
+
   return (
     <div
       title={`${value} ${label}`}
       className={
-        'hidden sm:inline-flex items-center gap-2 px-3 h-10 rounded-full ' +
+        'inline-flex items-center gap-2 px-3 h-10 rounded-full ' +
         'bg-gradient-to-r ring-1 ' +
         toneClass
       }
@@ -195,7 +211,12 @@ function StatChip({
       <span aria-hidden className="h-5 w-5 flex items-center justify-center">
         {icon}
       </span>
-      <span className="font-bold text-sm tabular-nums">{value}</span>
+      <span className="font-bold text-sm tabular-nums flex items-center gap-1">
+        {value}
+        <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500/80 dark:text-slate-300/70 ml-0.5">
+          {labelText}
+        </span>
+      </span>
     </div>
   );
 }

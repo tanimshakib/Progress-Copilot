@@ -194,6 +194,9 @@ export async function getDashboard(userId: string) {
     take: 3,
   });
 
+  const coursesCount = await prisma.course.count({ where: { userId } });
+  const completedCoursesCount = await prisma.course.count({ where: { userId, isCompleted: true } });
+
   // ── 6. 365-day contribution grid (realtime sync with completed tasks + streak)
   const since = startOfUTCDay(
     new Date(now.getTime() - (CONTRIBUTION_DAYS - 1) * DAY_MS),
@@ -255,6 +258,8 @@ export async function getDashboard(userId: string) {
     projects,
     recentNotes,
     recentCourses,
+    coursesCount,
+    completedCoursesCount,
     contributionGrid: {
       days: CONTRIBUTION_DAYS,
       cells,

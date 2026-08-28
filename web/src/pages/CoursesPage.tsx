@@ -293,7 +293,7 @@ export function CoursesPage() {
                     <BookOpen className="text-purple-600 dark:text-fuchsia-400" size={20} />
                     {semTitle}
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-violet-300 font-semibold border border-purple-500/20">
-                      {semesterCourses.length} {semesterCourses.length === 1 ? 'Course' : 'Courses'}
+                      {semesterCourses.filter((c) => c.isCompleted).length} / {semesterCourses.length} Completed
                     </span>
                   </h2>
 

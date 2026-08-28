@@ -12,13 +12,14 @@ import {
   Loader2,
   TrendingUp,
   Award,
+  Zap,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { DashboardCard } from '../components/dashboard/DashboardCard';
 import { TaskCompletionTrendChart } from '../components/dashboard/TaskCompletionTrendChart';
 import { PointsDistributionChart } from '../components/dashboard/PointsDistributionChart';
-import { ProductivityScoreGauge } from '../components/dashboard/ProductivityScoreGauge';
+import { ProgressScore } from '../components/dashboard/ProductivityScore';
 
 export function ReportsPage() {
   const { addToast } = useToast();
@@ -155,12 +156,19 @@ export function ReportsPage() {
 
           {/* Metric Cards Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {/* Productivity Score Card */}
-            <div className="rounded-2xl border-2 border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/10 to-indigo-500/10 dark:from-[#210d3d]/90 dark:to-[#0f0a24]/95 p-5 shadow-sm flex flex-col items-center justify-center">
-              <ProductivityScoreGauge
-                score={stats.productivityScore ?? stats.progressScore ?? 0}
-                breakdown={stats.scoreBreakdown}
-              />
+            {/* Progress Score Card */}
+            <div className="rounded-2xl border-2 border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/10 to-indigo-500/10 dark:from-[#210d3d]/90 dark:to-[#0f0a24]/95 p-5 shadow-sm">
+              <ProgressScore
+                score={stats.progressScore ?? 0}
+                subtitle={`${stats.points} total points`}
+              >
+                <div className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-fuchsia-400 flex items-center gap-1">
+                  <Zap size={14} /> Progress Score
+                </div>
+                <div className="text-xs text-slate-600 dark:text-violet-200 mt-0.5 font-medium">
+                  {(stats.progressScore ?? 0) >= 80 ? 'Exceptional Progress!' : (stats.progressScore ?? 0) >= 50 ? 'Steady Growth Track' : 'Getting Started'}
+                </div>
+              </ProgressScore>
             </div>
 
             {/* Target Completion */}
@@ -252,9 +260,9 @@ export function ReportsPage() {
                 </div>
               </div>
               <div className="text-2xl font-black text-slate-900 dark:text-white">
-                {stats.coursesCount}
+                {stats.completedCoursesCount ?? 0} / {stats.coursesCount ?? 0}
               </div>
-              <p className="text-xs text-slate-500 dark:text-violet-300/70 mt-3">Organized by semester tracks</p>
+              <p className="text-xs text-slate-500 dark:text-violet-300/70 mt-3">Completed / Enrolled track progress</p>
             </div>
           </div>
 

@@ -31,6 +31,14 @@ enum Sender {
   AI
 }
 
+enum League {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // User (tenant root)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,7 +75,10 @@ model User {
   employmentRole       String?       // "Student", "Freelancer", "Employee", ...
   areaType             String?       // "Urban", "Town", "Rural"
   points               Int           @default(0)
+  weeklyPoints         Int           @default(0)
   dailyStreak          Int           @default(0)
+  league               League        @default(BRONZE)
+  isLeaderboardVisible Boolean       @default(true)
   lastTaskCompleteDate DateTime?
   theme                String        @default("light") // "light" | "dark"
   timezone             String        @default("UTC")
@@ -77,16 +88,17 @@ model User {
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
-  futureGoal   FutureGoal?
-  targets      Target[]
-  tasks        Task[]
-  notes        Note[]
-  courses      Course[]
-  reminders    Reminder[]
-  chats        ChatHistory[]
-  addresses    Address[]
-  educations   Education[]
-  skills       Skill[]
+  futureGoal    FutureGoal?
+  targets       Target[]
+  tasks         Task[]
+  notes         Note[]
+  courses       Course[]
+  reminders     Reminder[]
+  chats         ChatHistory[]
+  addresses     Address[]
+  educations    Education[]
+  skills        Skill[]
+  notifications Notification[]
 
   @@index([email])
 }
@@ -185,6 +197,7 @@ model Target {
   deadline    DateTime?
   priority    Priority     @default(MEDIUM)
   status      TargetStatus @default(INCOMPLETE)
+  isPenalized Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -209,6 +222,7 @@ model Task {
   deadline    DateTime?
   isCompleted Boolean   @default(false)
   priority    Priority  @default(MEDIUM) // inherited from target if targetId set
+  isPenalized Boolean   @default(false)
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -311,3 +325,23 @@ model Message {
 
   @@index([chatId, createdAt])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("PENALTY") // "PENALTY" | "REMINDER" | "SYSTEM" | "INACTIVITY" | "STREAK_BREAK"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}

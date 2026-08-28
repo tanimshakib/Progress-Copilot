@@ -264,6 +264,7 @@ export async function toggleTask(
         where: { id: userId },
         data: {
           points: { increment: earned },
+          weeklyPoints: { increment: earned },
           ...(crossed
             ? {
                 dailyStreak: { increment: 1 },
@@ -298,13 +299,14 @@ export async function toggleTask(
       // drive the total negative.
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { points: true },
+        select: { points: true, weeklyPoints: true },
       });
       const nextPoints = Math.max(0, (user?.points ?? 0) - refund);
+      const nextWeeklyPoints = Math.max(0, (user?.weeklyPoints ?? 0) - refund);
 
       await tx.user.update({
         where: { id: userId },
-        data: { points: nextPoints },
+        data: { points: nextPoints, weeklyPoints: nextWeeklyPoints },
       });
 
       return { updatedTask };
@@ -337,12 +339,13 @@ async function reversePointsForCompletion(
   const refund = isSub ? pointsForSubTask(priority) : POINTS_FOR_STANDALONE;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { points: true },
+    select: { points: true, weeklyPoints: true },
   });
   const nextPoints = Math.max(0, (user?.points ?? 0) - refund);
+  const nextWeeklyPoints = Math.max(0, (user?.weeklyPoints ?? 0) - refund);
   await prisma.user.update({
     where: { id: userId },
-    data: { points: nextPoints },
+    data: { points: nextPoints, weeklyPoints: nextWeeklyPoints },
   });
 }
 

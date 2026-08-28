@@ -95,6 +95,8 @@ export function DashboardHomePage() {
     projects,
     recentNotes = [],
     recentCourses = [],
+    coursesCount = 0,
+    completedCoursesCount = 0,
     contributionGrid,
   } = data as any;
 
@@ -368,7 +370,7 @@ export function DashboardHomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Courses */}
         <DashboardCard
-          title="Enrolled Courses"
+          title={`Enrolled Courses (${completedCoursesCount}/${coursesCount})`}
           subtitle="Semester tracks and learning materials."
           action={
             <Link

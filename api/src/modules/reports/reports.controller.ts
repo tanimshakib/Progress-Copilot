@@ -119,6 +119,7 @@ export const getReportSummary = asyncHandler(async (req: Request, res) => {
   const tasks = await prisma.task.findMany({ where: { userId } });
   const notesCount = await prisma.note.count({ where: { userId } });
   const coursesCount = await prisma.course.count({ where: { userId } });
+  const completedCoursesCount = await prisma.course.count({ where: { userId, isCompleted: true } });
 
   const completedTargets = targets.filter((t) => t.status === 'COMPLETED').length;
   const completedTasks = tasks.filter((t) => t.isCompleted).length;
@@ -151,6 +152,7 @@ export const getReportSummary = asyncHandler(async (req: Request, res) => {
       taskCompletionRate: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
       notesCount,
       coursesCount,
+      completedCoursesCount,
     },
     tasksCompletedLast30Days,
     pointsDistribution,
@@ -167,6 +169,7 @@ export const downloadPDFReport = asyncHandler(async (req: Request, res) => {
   const tasks = await prisma.task.findMany({ where: { userId } });
   const notesCount = await prisma.note.count({ where: { userId } });
   const coursesCount = await prisma.course.count({ where: { userId } });
+  const completedCoursesCount = await prisma.course.count({ where: { userId, isCompleted: true } });
 
   const completedTargets = targets.filter((t) => t.status === 'COMPLETED').length;
   const completedTasks = tasks.filter((t) => t.isCompleted).length;
@@ -252,7 +255,7 @@ export const downloadPDFReport = asyncHandler(async (req: Request, res) => {
     .text(`• Targets Completed: ${completedTargets} / ${targets.length}`)
     .text(`• Tasks Completed: ${completedTasks} / ${tasks.length}`)
     .text(`• Total Study Notes: ${notesCount}`)
-    .text(`• Total Enrolled Courses: ${coursesCount}`);
+    .text(`• Total Enrolled Courses: ${completedCoursesCount} Completed / ${coursesCount} Enrolled`);
 
   doc.moveDown(1.2);
 

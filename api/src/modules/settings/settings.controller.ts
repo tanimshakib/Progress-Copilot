@@ -15,6 +15,7 @@ export const getSettings = asyncHandler(async (req: Request, res) => {
       pushNotifications: true,
       emailNotifications: true,
       reminderSound: true,
+      isLeaderboardVisible: true,
       aiBio: true,
     },
   });
@@ -31,6 +32,7 @@ export const getSettings = asyncHandler(async (req: Request, res) => {
       pushNotifications: user.pushNotifications ?? true,
       emailNotifications: user.emailNotifications ?? true,
       reminderSound: user.reminderSound ?? true,
+      isLeaderboardVisible: user.isLeaderboardVisible ?? true,
       githubConnected,
       githubHandle,
     },
@@ -45,6 +47,7 @@ export const updateSettings = asyncHandler(async (req: Request, res) => {
     pushNotifications,
     emailNotifications,
     reminderSound,
+    isLeaderboardVisible,
   } = req.body;
 
   const dataToUpdate: any = {};
@@ -53,6 +56,7 @@ export const updateSettings = asyncHandler(async (req: Request, res) => {
   if (pushNotifications !== undefined) dataToUpdate.pushNotifications = Boolean(pushNotifications);
   if (emailNotifications !== undefined) dataToUpdate.emailNotifications = Boolean(emailNotifications);
   if (reminderSound !== undefined) dataToUpdate.reminderSound = Boolean(reminderSound);
+  if (isLeaderboardVisible !== undefined) dataToUpdate.isLeaderboardVisible = Boolean(isLeaderboardVisible);
 
   const updated = await prisma.user.update({
     where: { id: userId },
@@ -64,6 +68,7 @@ export const updateSettings = asyncHandler(async (req: Request, res) => {
       pushNotifications: true,
       emailNotifications: true,
       reminderSound: true,
+      isLeaderboardVisible: true,
       aiBio: true,
     },
   });
@@ -77,6 +82,7 @@ export const updateSettings = asyncHandler(async (req: Request, res) => {
       pushNotifications: updated.pushNotifications,
       emailNotifications: updated.emailNotifications,
       reminderSound: updated.reminderSound,
+      isLeaderboardVisible: updated.isLeaderboardVisible,
       githubConnected: !!githubMatch,
       githubHandle: githubMatch ? githubMatch[1] : null,
     },
